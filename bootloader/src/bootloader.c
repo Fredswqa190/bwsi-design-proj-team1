@@ -9,6 +9,9 @@
 #include "driverlib/sysctl.h" // System control API (clock/reset)
 #include "driverlib/interrupt.h" // Interrupt API
 
+// Library Imports
+#include <string.h>
+
 // Application Imports
 #include "uart.h"
 
@@ -90,7 +93,8 @@ int main(void) {
  */
 void load_initial_firmware(void) {
 
-  if (*((uint32_t*)(METADATA_BASE+512)) != 0){
+
+  if (*((uint32_t*)(METADATA_BASE)) != 0xFFFFFFFF){
     /*
      * Default Flash startup state in QEMU is all zeros since it is
      * secretly a RAM region for emulation purposes. Only load initial
@@ -101,19 +105,62 @@ void load_initial_firmware(void) {
     return;
   }
 
+  // Create buffers for saving the release message
+  uint8_t temp_buf[FLASH_PAGESIZE];
+  char initial_msg[] = "This is the initial release message.";
+  uint16_t msg_len = strlen(initial_msg)+1;
+  uint16_t rem_msg_bytes;
+  
+  // Get included initial firmware
   int size = (int)&_binary_firmware_bin_size;
-  int *data = (int *)&_binary_firmware_bin_start;
-    
+  uint8_t *initial_data = (uint8_t *)&_binary_firmware_bin_start;
+  
+  // Set version 2 and install
   uint16_t version = 2;
   uint32_t metadata = (((uint16_t) size & 0xFFFF) << 16) | (version & 0xFFFF);
   program_flash(METADATA_BASE, (uint8_t*)(&metadata), 4);
-  fw_release_message_address = (uint8_t *) "This is the initial release message.";
-    
-  int i = 0;
-  for (; i < size / FLASH_PAGESIZE; i++){
-       program_flash(FW_BASE + (i * FLASH_PAGESIZE), ((unsigned char *) data) + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
+  
+  int i;
+  
+  for (i = 0; i < size / FLASH_PAGESIZE; i++){
+       program_flash(FW_BASE + (i * FLASH_PAGESIZE), initial_data + (i * FLASH_PAGESIZE), FLASH_PAGESIZE);
   }
-  program_flash(FW_BASE + (i * FLASH_PAGESIZE), ((unsigned char *) data) + (i * FLASH_PAGESIZE), size % FLASH_PAGESIZE);
+  
+  /* At end of firmware. Since the last page may be incomplete, we copy the initial
+   * release message into the unused space in the last page. If the firmware fully
+   * uses the last page, the release message simply is written to a new page.
+   */
+  
+  uint16_t rem_fw_bytes = size % FLASH_PAGESIZE;
+  if (rem_fw_bytes == 0){
+    // No firmware left. Just write the release message
+    program_flash(FW_BASE + (i*FLASH_PAGESIZE), (uint8_t *)initial_msg, msg_len);
+  } else {
+    // Some firmware left. Determine how many bytes of release message can fit
+    if (msg_len > (FLASH_PAGESIZE-rem_fw_bytes)) {
+      rem_msg_bytes = msg_len - (FLASH_PAGESIZE-rem_fw_bytes);
+    } else {
+      rem_msg_bytes = 0;
+    }
+    
+    // Copy rest of firmware
+    memcpy(temp_buf, initial_data + (i*FLASH_PAGESIZE), rem_fw_bytes);
+    // Copy what will fit of the release message
+    memcpy(temp_buf+rem_fw_bytes, initial_msg, msg_len-rem_msg_bytes);
+    // Program the final firmware and first part of the release message
+    program_flash(FW_BASE + (i * FLASH_PAGESIZE), temp_buf, rem_fw_bytes+(msg_len-rem_msg_bytes));
+    
+    // If there are more bytes, program them directly from the release message string
+    if (rem_msg_bytes > 0) {
+      // Writing to a new page. Increment pointer
+      i++;
+      program_flash(FW_BASE + (i * FLASH_PAGESIZE), (uint8_t *)(initial_msg+(msg_len-rem_msg_bytes)), rem_msg_bytes);
+    }
+  }
+  
+  // Compute release message start address
+  fw_release_message_address = (uint8_t*)(FW_BASE+size);
+  
 }
 
 
@@ -183,7 +230,7 @@ void load_firmware(void)
     frame_length += (int)rcv;
 
     // Write length debug message
-    uart_write_hex(UART2,(unsigned char)rcv);
+    uart_write_hex(UART2, frame_length);
     nl(UART2);
 
     // Get the number of bytes specified
@@ -235,28 +282,41 @@ void load_firmware(void)
  */
 long program_flash(uint32_t page_addr, unsigned char *data, unsigned int data_len)
 {
-  unsigned int padded_data_len;
+  uint32_t word = 0;
+  int ret;
+  int i;
 
   // Erase next FLASH page
   FlashErase(page_addr);
 
   // Clear potentially unused bytes in last word
+  // If data not a multiple of 4 (word size), program up to the last word
+  // Then create temporary variable to create a full last word
   if (data_len % FLASH_WRITESIZE){
-    // Get number unused
+    // Get number of unused bytes
     int rem = data_len % FLASH_WRITESIZE;
-    int i;
-    // Set to 0
-    for (i = 0; i < rem; i++){
-      data[data_len-1-i] = 0x00;
+    int num_full_bytes = data_len - rem;
+    
+    // Program up to the last word
+    ret = FlashProgram((unsigned long *)data, page_addr, num_full_bytes);
+    if (ret != 0) {
+      return ret;
     }
-    // Pad to 4-byte word
-    padded_data_len = data_len+(FLASH_WRITESIZE-rem);
-  } else {
-    padded_data_len = data_len;
+    
+    // Create last word variable -- fill unused with 0xFF
+    for (i = 0; i < rem; i++) {
+      word = (word >> 8) | (data[num_full_bytes+i] << 24); // Essentially a shift register from MSB->LSB
+    }
+    for (i = i; i < 4; i++){
+      word = (word >> 8) | 0xFF000000;
+    }
+    
+    // Program word
+    return FlashProgram(&word, page_addr+num_full_bytes, 4);
+  } else{
+    // Write full buffer of 4-byte words
+    return FlashProgram((unsigned long *)data, page_addr, data_len);
   }
-
-  // Write full buffer of 4-byte words
-  return FlashProgram((unsigned long *)data, page_addr, padded_data_len);
 }
 
 
