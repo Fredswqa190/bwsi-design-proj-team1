@@ -22,6 +22,8 @@ tmux send-keys 'miniterm /embsec/UART0 115200' Enter
 tmux select-pane -R
 tmux send-keys 'miniterm /embsec/UART1 115200' Enter
 tmux split-window -v
+tmux select-pane -U
+tmux split-window -v
 tmux send-keys 'miniterm /embsec/UART2 115200' Enter
 # begin!
 tmux -2 attach-session -d -t design_hq
