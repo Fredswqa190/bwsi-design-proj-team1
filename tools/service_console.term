@@ -3,6 +3,7 @@
 # This just uses some tmux to open all the windows we'll need.
 # re-map control + b to control + a
 # start a new session, and display the "hidden" instructions
+
 tmux new-session -d -s design_hq 'less ./.tmux_instructions.txt'
 tmux set -g prefix C-a
 tmux unbind C-b
@@ -12,7 +13,16 @@ tmux set -g mouse on
 tmux split-window -h
 tmux select-pane -L
 # launch the emulator
-tmux split-window -v 'python bl_emulate.py'
+if [ ! $# -eq 0 ]
+then
+    if [ $1 = '--debug' ];
+    then
+        echo "Running in debug mode"
+        tmux split-window -v 'python bl_emulate.py --debug'  
+    else
+        tmux split-window -v 'python bl_emulate.py'
+    fi
+fi
 tmux split-window -v
 tmux split-window -v
 # wait a few seconds to allow the UART interfaces to show up
