@@ -13,16 +13,14 @@ tmux set -g mouse on
 tmux split-window -h
 tmux select-pane -L
 # launch the emulator
-if [ ! $# -eq 0 ]
+if [ "$@ " = "--debug " ];
 then
-    if [ $1 = '--debug' ];
-    then
-        echo "Running in debug mode"
-        tmux split-window -v 'python bl_emulate.py --debug'  
-    else
-        tmux split-window -v 'python bl_emulate.py'
-    fi
+    echo "Running in debug mode"
+    tmux split-window -v 'python bl_emulate.py --debug'
+else
+    tmux split-window -v 'python bl_emulate.py'
 fi
+
 tmux split-window -v
 tmux split-window -v
 # wait a few seconds to allow the UART interfaces to show up
