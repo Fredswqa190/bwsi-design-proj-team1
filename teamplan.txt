@@ -1,0 +1,5 @@
+First thing key generation, probably public/private, management system to store it, key rotation/rovaction potentially? then bootloader with secure boot and decent protocols for firmware updates, make sure to use signing with the private key for firmware, probably TLS for the firmware updates
+then you need something to verify firmware
+can use the public key for that and use hashing to check the integrity of it
+E2EE for the firmware downloading so MITM is covered
+4.2 for example 
