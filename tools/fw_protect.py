@@ -5,6 +5,8 @@ Firmware Bundle-and-Protect Tool
 import argparse
 import struct
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+import random
 
 
 def protect_firmware(infile, outfile, version, message):
@@ -14,6 +16,10 @@ def protect_firmware(infile, outfile, version, message):
     
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read()
+    
+    seed=("AESIV") 
+    random.seed(seed)
+    iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
 
     # Append null-terminated message to end of firmware
     firmware_and_message = firmware + message.encode() + b'\00'
@@ -24,6 +30,9 @@ def protect_firmware(infile, outfile, version, message):
     # Append firmware and message to metadata
     firmware_blob = metadata + firmware_and_message
 
+    cipherNew = AES.new(key, AES.MODE_GCM)
+    output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
+    firmware_blob = iv + output + cipherNew.digest()
     # Write firmware blob to outfile
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
