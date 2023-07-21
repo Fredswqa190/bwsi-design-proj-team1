@@ -4,12 +4,16 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+from Crypto.Cipher import AES
 
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
+    
+    with open('secret_build_output.txt', 'rb') as f:
+        key = f.read()
 
     # Append null-terminated message to end of firmware
     firmware_and_message = firmware + message.encode() + b'\00'
