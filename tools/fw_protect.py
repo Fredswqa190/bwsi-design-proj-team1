@@ -14,7 +14,7 @@ from Crypto.Util.Padding import pad, unpad
 import random
 
 
-def protect_firmware(infile, outfile, version, message):
+def AESProtect(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
@@ -54,4 +54,4 @@ if __name__ == '__main__':
     parser.add_argument("--message", help="Release message for this firmware.", required=True)
     args = parser.parse_args()
 
-    protect_firmware(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
+    AESProtect(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
