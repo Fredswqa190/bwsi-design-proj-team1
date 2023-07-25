@@ -9,7 +9,7 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, HMAC
 from Crypto.Signature import pkcs1_15
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
@@ -34,7 +34,8 @@ def AESProtect(infile, outfile, version, message):
         f.write("iv: ", iv)
 
     # Hash firmware file using SHA 256
-    hash = SHA256.new(firmware)
+    hash = SHA256.new()
+    hash.update(firmware)
 
     # Writes hash into secret output file 
     with open('secret_build_output.txt', 'w') as f:
@@ -46,6 +47,12 @@ def AESProtect(infile, outfile, version, message):
     # Writes signature into secret output file
     with open('secret_build_output.txt', 'w') as f:
         f.write("signature: ", signature)
+
+    # Creates HMAC key
+    hmackey = HMAC.new(key, digestmod = SHA256)
+
+    # Creates SHA256 signature of encrypted file
+    hmac = HMAC.new(hmackey, firmware, digestmod = SHA256)
 
     # Append null-terminated message to end of firmware
     firmware_and_message = firmware + message.encode() + b'\00'
