@@ -29,6 +29,10 @@ def AESProtect(infile, outfile, version, message):
     random.seed(seed)
     iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
 
+    #writes iv to secret output file
+    with open('secret_build_output.txt', 'w') as f:
+        f.write("iv: ", iv)
+
     # Hash firmware file using SHA 256
     hash = SHA256.new(firmware)
 
@@ -42,13 +46,9 @@ def AESProtect(infile, outfile, version, message):
     # Writes signature into secret output file
     with open('secret_build_output.txt', 'w') as f:
         f.write("signature: ", signature)
-    
-    # Begin AES encryption
-    cipher = AES.new(key, AES.MODE_GCM, iv)
-    ciphertext, tag = cipher.encrypt_and_digest(firmware)
 
     # Append null-terminated message to end of firmware
-    firmware_and_message = ciphertext + message.encode() + b'\00'
+    firmware_and_message = firmware + message.encode() + b'\00'
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
