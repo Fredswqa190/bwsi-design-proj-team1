@@ -9,6 +9,8 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+from Crypto.Hash import SHA256
+from Crypto.Signature import pkcs1_15
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import random
@@ -26,6 +28,16 @@ def AESProtect(infile, outfile, version, message):
     seed=("AESIV") 
     random.seed(seed)
     iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
+
+    # Hash firmware file using SHA 256
+    hash = SHA256.new(firmware)
+
+    # Writes hash into secret output file 
+    with open('secret_build_output.txt', 'w') as f:
+        f.write(hash) 
+
+    # Creates a signature
+    signature = pkcs1_15.new()
 
     # Append null-terminated message to end of firmware
     firmware_and_message = firmware + message.encode() + b'\00'
