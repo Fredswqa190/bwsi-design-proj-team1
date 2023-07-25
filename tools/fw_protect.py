@@ -34,13 +34,21 @@ def AESProtect(infile, outfile, version, message):
 
     # Writes hash into secret output file 
     with open('secret_build_output.txt', 'w') as f:
-        f.write(hash) 
+        f.write("overall file hash: ", hash) 
 
     # Creates a signature
     signature = pkcs1_15.new()
 
+    # Writes signature into secret output file
+    with open('secret_build_output.txt', 'w') as f:
+        f.write("signature: ", signature)
+    
+    # Begin AES encryption
+    cipher = AES.new(key, AES.MODE_GCM, iv)
+    ciphertext, tag = cipher.encrypt_and_digest(firmware)
+
     # Append null-terminated message to end of firmware
-    firmware_and_message = firmware + message.encode() + b'\00'
+    firmware_and_message = ciphertext + message.encode() + b'\00'
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
