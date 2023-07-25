@@ -14,6 +14,9 @@ import os
 import pathlib
 import shutil
 import subprocess
+from Crypto.PublicKey import ECC
+from Crypto.Random import get_random_bytes
+
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
 BOOTLOADER_DIR = os.path.join(REPO_ROOT, "bootloader")
@@ -32,8 +35,11 @@ def make_bootloader() -> bool:
     os.chdir(BOOTLOADER_DIR)
 
     subprocess.call("make clean", shell=True)
-    status = subprocess.call("make")
-
+    # status = subprocess.call(f'make AES={arrayize(aes_key)} ECCkey={arrayize(ecc_key)}', shell=True)
+    ECCkey = ECC.generate(curve='P-256')
+    AESkey = get_random_bytes(128)
+    print(AESkey)
+    print(ECCkey)
     # Return True if make returned 0, otherwise return False.
     return status == 0
 
