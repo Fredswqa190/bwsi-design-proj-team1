@@ -50,6 +50,7 @@ def AESProtect(infile, outfile, version, message):
     hash = SHA256.new()
     hash.update(firmware_blob)
     hash_value = hash.digest()
+    print(hash_value)
 
     # Adds hash value and null-terminated message to end of blob
     firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
