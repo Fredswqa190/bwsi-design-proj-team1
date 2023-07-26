@@ -10,7 +10,7 @@ Firmware Bundle-and-Protect Tool
 import argparse
 import struct
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256, HMAC
+from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
 from Crypto.Util.Padding import pad, unpad
 import random
@@ -21,7 +21,7 @@ def protect_firmware(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # Reads key for AES
+    # Reads key for AES (should be read in bytes according to iv)
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read()
 
@@ -30,39 +30,29 @@ def protect_firmware(infile, outfile, version, message):
     random.seed(seed)
     iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
 
-    # Hash firmware file using SHA 256
-    hash = SHA256.new()
-    hash.update(firmware)
-    
-    # Writes hash into secret output file 
-    with open('secret_build_output.txt', 'w') as f:
-        f.write(firmware) 
-
-    # Reads HMAC key
-    with open('secret_build_output.txt', 'rb') as f:
-        hmackey = f.read()
-
-    # Creates SHA256 signature of encrypted file
-    hmac = HMAC.new(hmackey, firmware, digestmod = SHA256)
-
-    # Append null-terminated message to end of firmware
-    firmware_and_message = firmware + message.encode() + b'\00'
-
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
-
-    # Append firmware and message to metadata
-    firmware_blob = metadata + firmware_and_message
 
     # Encrypt firmware blob with AES-GCM 
     cipherNew = AES.new(key, AES.MODE_GCM)
     output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
-    firmware_blob = iv + output + cipherNew.digest()
+    firmware_blob = metadata + output + iv
 
+    # Hash firmware blob using SHA 256
+    hash = SHA256.new()
+    hash.update(firmware_blob)
+    hash_value = hash.digest()
+
+    # Adds hash value and null-terminated message to end of blob
+    firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
+
+     # Writes hash into secret output file 
+    with open('secret_build_output.txt', 'w') as f:
+        f.write(hash_value) 
+    
     # Write firmware blob to outfile
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
