@@ -15,6 +15,7 @@ import pathlib
 import shutil
 import subprocess
 from Crypto.PublicKey import ECC
+from Crypto.Random import get_random_bytes
 
 
 
@@ -38,14 +39,16 @@ def make_bootloader() -> bool:
     # status = subprocess.call(f'make AES={arrayize(aes_key)} ECCkey={arrayize(ecc_key)}', shell=True)
     #changed to only AES key; no ECC key gen -via
     AESkey = get_random_bytes(128)
-    print(AESkey)
 
     #chacha slide generation happening here Luniva
-    ChaKey = os.urandom(32) 
+    
+    chaKey = get_random_bytes(32)
+    polyKey = get_random_bytes(16)
 
     with open("secret_build_output.txt", "wt") as f:
         f.write('\n str(AESkey)\n')
         f.write('\n str(ChaKey)\n')
+        print.hex()
     # Return True if make returned 0, otherwise return False.
     return status == 0
 
