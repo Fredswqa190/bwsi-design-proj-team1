@@ -13,6 +13,8 @@
 #include "driverlib/sysctl.h"    // System control API (clock/reset)
 #include "driverlib/interrupt.h" // Interrupt API
 
+#include "secrets.h"
+
 // Library Imports
 #include <string.h>
 
@@ -40,7 +42,6 @@ void deAES(uint16_t cSize, uint8_t cText[cSize]);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
-#define eccKey 1//eccPrivKey
 #define aesKey 2//eccPubKey
 
 
