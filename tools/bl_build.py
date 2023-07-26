@@ -15,8 +15,7 @@ import pathlib
 import shutil
 import subprocess
 from Crypto.PublicKey import ECC
-from Crypto.Random import get_random_bytes
-from chacha20poly1305 import ChaCha20Poly1305
+
 
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
