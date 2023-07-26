@@ -25,8 +25,7 @@ void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
 void deECC(void);
-void deAES(void);
-
+void deAES(uint16_t cSize, uint8_t cText[cSize]);
 
 // Firmware Constants
 #define METADATA_BASE 0xFC00 // base address of version and firmware size in Flash
@@ -41,8 +40,8 @@ void deAES(void);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
-#define eccKey eccPrivKey
-#define aesKey eccPubKey
+#define eccKey 1//eccPrivKey
+#define aesKey 2//eccPubKey
 
 
 // Firmware v2 is embedded in bootloader
@@ -364,6 +363,6 @@ void deECC(){
     //printf(eccKey);
 }
 //decrypts AES
-void deAES(){
-
+void deAES(uint16_t cSize, uint8_t cText[cSize]){
+    aes_decrypt(aesKey, cText, cSize);
 }
