@@ -43,8 +43,9 @@ class DomainSocketSerial:
         del self
 
 def print_hex(data):
-    hex_string = ' '.join(format(byte, '02x') for byte in data)
+    hex_string = ', 0x'.join(format(byte, '02x') for byte in data)
     print(hex_string)
+    return hex_string
 
 def eccKeygen(): # Not sure if we should touch this rn
     key = ECC.generate(curve='P-256')
