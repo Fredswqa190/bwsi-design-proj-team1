@@ -56,17 +56,20 @@ def protect_firmware(infile, outfile, version, message):
         outfile.write(firmware_blob)
 
 def ChaChaslide(){
-    #read ChaKey from secret file (for now just writing it in)
+    #read chaKey and polyKey from secret file 
     with open(secret_build_output, 'rb') as f:
         ignore = f.read(32)
-        key = f.read(32)
+        chaKey = f.read(32)
+        polyKey = f.read(16)
+        #after this is the hash that was created above, that gets ignored as well
+        #personal note polyKey is not nonce
     
-    #import file 
+    #import firmware file from above 
     with open(outfile, 'rb') as f:
         firmware = fp.read()
     
     #creates cipher
-    cipher = ChaCha20_Poly1305.new(key, nonce = None)
+    cipher = ChaCha20_Poly1305.new(chaKeykey, nonce = None)
 
     #
 
