@@ -14,9 +14,14 @@ import os
 import pathlib
 import shutil
 import subprocess
+from Crypto.PublicKey import ECC
+
+
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
 BOOTLOADER_DIR = os.path.join(REPO_ROOT, "bootloader")
+
+
 
 
 def copy_initial_firmware(binary_path: str):
@@ -32,8 +37,23 @@ def make_bootloader() -> bool:
     os.chdir(BOOTLOADER_DIR)
 
     subprocess.call("make clean", shell=True)
-    status = subprocess.call("make")
+    # status = subprocess.call(f'make AES={arrayize(aes_key)} ECCkey={arrayize(ecc_key)}', shell=True)
+    #changed to only AES key; no ECC key gen -via
+    AESkey = get_random_bytes(128)
+    print(AESkey)
 
+    #chacha slide generation happening here Luniva
+    ChaKey = os.urandom(32) 
+
+    with open("secret_build_output.txt", "wt") as f:
+        f.write('\n str(AESkey)\n')
+        f.write('\n str(ChaKey)\n')
+
+    with open("./src/secrets.h", "w") as f:
+        f.write("#ifndef SECRETS_H\n")
+        f.write("#define SECRETS_H\n")
+        f.write("const uint8_t[32] = " + print_hex(AESkey) + ";\n")
+        f.write("#endif SECRETS_H\n")
     # Return True if make returned 0, otherwise return False.
     return status == 0
 
