@@ -21,22 +21,24 @@ def protect_firmware(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # Reads key for AES (should be read in bytes according to iv)
+    # test code ONLY
+    with open("secret_build_output.txt", "a") as f:
+        key = os.urandom(32)
+        f.write(str(key))
+
+    # Reads key for AES (256 bit key length)
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read(32)
-
-    # Generate AES Initialization Vector
-    iv = os.urandom(12)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(key, AES.MODE_GCM, iv=iv)
+    cipherNew = AES.new(key, AES.MODE_GCM)
     output = cipherNew.encrypt(pad(firmware, AES.block_size))
 
     # Adds metadata, encrypted firmware, and iv to a firmware_blob
-    firmware_blob = metadata + output + iv
+    firmware_blob = metadata + output
 
     # Hash firmware blob using SHA 256
     hash = SHA256.new()
