@@ -17,7 +17,6 @@ import subprocess
 from Crypto.PublicKey import ECC
 
 
-
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
 BOOTLOADER_DIR = os.path.join(REPO_ROOT, "bootloader")
 
@@ -39,16 +38,17 @@ def make_bootloader() -> bool:
     subprocess.call("make clean", shell=True)
     # status = subprocess.call(f'make AES={arrayize(aes_key)} ECCkey={arrayize(ecc_key)}', shell=True)
     #changed to only AES key; no ECC key gen -via
-    AESkey = get_random_bytes(128)
+    AESkey = os.urandom(32)
     print(AESkey)
 
     #chacha slide generation happening here Luniva
     ChaKey = os.urandom(32) 
 
     with open("secret_build_output.txt", "wt") as f:
-        f.write('\n str(AESkey)\n')
-        f.write('\n str(ChaKey)\n')
-
+        f.write('\n')
+        f.write(str(AESkey))
+        f.write('\n')
+        f.write(str(ChaKey))
     with open("./src/secrets.h", "w") as f:
         f.write("#ifndef SECRETS_H\n")
         f.write("#define SECRETS_H\n")
