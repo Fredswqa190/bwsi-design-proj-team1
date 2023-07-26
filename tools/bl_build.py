@@ -16,6 +16,7 @@ import shutil
 import subprocess
 from Crypto.PublicKey import ECC
 from Crypto.Random import get_random_bytes
+from chacha20poly1305 import ChaCha20Poly1305
 
 
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
@@ -36,10 +37,16 @@ def make_bootloader() -> bool:
 
     subprocess.call("make clean", shell=True)
     # status = subprocess.call(f'make AES={arrayize(aes_key)} ECCkey={arrayize(ecc_key)}', shell=True)
-    ECCkey = ECC.generate(curve='P-256')
+    #changed to only AES key; no ECC key gen -via
     AESkey = get_random_bytes(128)
     print(AESkey)
-    print(ECCkey)
+
+    #chacha slide generation happening here Luniva
+    ChaKey = os.urandom(32) 
+
+    with open("secret_build_output.txt", "wt") as f:
+        f.write('\n str(AESkey)\n')
+        f.write('\n str(ChaKey)\n')
     # Return True if make returned 0, otherwise return False.
     return status == 0
 
