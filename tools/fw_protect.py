@@ -11,7 +11,9 @@ import argparse
 import struct
 from Crypto.Hash import SHA256, HMAC
 from Crypto.Signature import pkcs1_15
+import os
 from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
 import random
 
@@ -21,7 +23,12 @@ def AESProtect(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # Reads key for AES (should be read in bytes according to iv)
+    # test code ONLY
+    with open("secret_build_output.txt", "a") as f:
+        key = os.urandom(32)
+        f.write(str(key))
+
+    # Reads key for AES (256 bit key length)
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read(32)
 
@@ -55,18 +62,25 @@ def AESProtect(infile, outfile, version, message):
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
-    # Append firmware and message to metadata
-    firmware_blob = metadata + firmware_and_message
-
-    # Encrypt firmware blob with AES-GCM
+    # Encrypt FIRWMARE with AES-GCM 
     cipherNew = AES.new(key, AES.MODE_GCM)
-    output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
-    firmware_blob = iv + output
+    output = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Writes hash into secret output file 
-    with open('secret_build_output.txt', 'a') as f:
-        f.write("AES digest: ", cipherNew.digest()) 
+    # Adds metadata, encrypted firmware, and iv to a firmware_blob
+    firmware_blob = metadata + output
 
+    # Hash firmware blob using SHA 256
+    hash = SHA256.new()
+    hash.update(firmware_blob)
+    hash_value = hash.digest()
+
+    # Adds hash value and null-terminated message to end of blob
+    firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
+
+     # Writes hash into secret output file 
+    with open('secret_build_output.txt', 'wb') as f:
+        f.write(hash_value) 
+    
     # Write firmware blob to outfile
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
