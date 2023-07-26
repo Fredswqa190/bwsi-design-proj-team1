@@ -9,44 +9,35 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
-from Crypto.Hash import SHA256, HMAC
-from Crypto.Signature import pkcs1_15
 import os
 from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
 import random
+from Crypto.Cipher import ChaCha20_Poly1305
+from Crypto.Random import get_random_bytes
 
-
-def AESProtect(infile, outfile, version, message):
+def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # test code ONLY
-    with open("secret_build_output.txt", "a") as f:
-        key = os.urandom(32)
-        f.write(str(key))
-
-    # Reads key for AES (256 bit key length)
+    # Reads key for AES (should be read in bytes according to iv)
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read(32)
 
-    # Hash firmware file using SHA 256
-    hash = SHA256.new()
-    hash.update(firmware)
-
-    # Append null-terminated message to end of firmware
-    firmware_and_message = firmware + message.encode() + b'\00'
+    # Generate AES Initialization Vector
+    iv = os.urandom(12)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(key, AES.MODE_GCM)
+    cipherNew = AES.new(key, AES.MODE_GCM, iv=iv)
     output = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Adds metadata and encrypted firmware to a firmware_blob
-    firmware_blob = metadata + output
+    # Adds metadata, encrypted firmware, and iv to a firmware_blob
+    firmware_blob = metadata + output + iv
 
     # Hash firmware blob using SHA 256
     hash = SHA256.new()
@@ -64,6 +55,24 @@ def AESProtect(infile, outfile, version, message):
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
 
+def ChaChaslide(){
+    #read ChaKey from secret file (for now just writing it in)
+    with open(secret_build_output, 'rb') as f:
+        ignore = f.read(32)
+        key = f.read(32)
+    
+    #import file 
+    with open(outfile, 'rb') as f:
+        firmware = fp.read()
+    
+    #creates cipher
+    cipher = ChaCha20_Poly1305.new(key, nonce = None)
+
+    #
+
+
+}
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
     parser.add_argument("--infile", help="Path to the firmware image to protect.", required=True)
@@ -72,4 +81,4 @@ if __name__ == '__main__':
     parser.add_argument("--message", help="Release message for this firmware.", required=True)
     args = parser.parse_args()
 
-    AESProtect(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
+    protect_firmware(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
