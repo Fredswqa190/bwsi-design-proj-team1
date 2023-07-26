@@ -13,7 +13,9 @@ from Crypto.Hash import SHA256
 import os
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
-
+import json
+from base64 import b64encode
+from Crypto.Cipher import ChaCha20_Poly1305
 
 def AESProtect(infile, outfile, version, message):
     # Load firmware binary from infile
@@ -63,6 +65,15 @@ def AESProtect(infile, outfile, version, message):
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
 
+        # Hashes the output file
+        hash2 = SHA256.new()
+        hash2.update(outfile)
+
+def CC20P1305Protect(outfile):
+    with open(outfile, 'r') as infile:
+        firmwareEncrypt1 = infile.read()
+    header = b'stuff'
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
     parser.add_argument("--infile", help="Path to the firmware image to protect.", required=True)
@@ -72,3 +83,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     AESProtect(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
+    CC20P1305Protect(outfile=args.outfile)
