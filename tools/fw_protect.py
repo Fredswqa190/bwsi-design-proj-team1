@@ -9,9 +9,9 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+import os
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
-from Crypto.Signature import pkcs1_15
 from Crypto.Util.Padding import pad, unpad
 import random
 
@@ -23,19 +23,19 @@ def protect_firmware(infile, outfile, version, message):
 
     # Reads key for AES (should be read in bytes according to iv)
     with open('secret_build_output.txt', 'rb') as f:
-        key = f.read()
+        key = f.read(32)
 
-    #Seed AES Initialization Vector
-    seed=("AESIV") 
-    random.seed(seed)
-    iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
+    # Generate AES Initialization Vector
+    iv = os.urandom(12)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
-    # Encrypt firmware blob with AES-GCM 
-    cipherNew = AES.new(key, AES.MODE_GCM)
-    output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
+    # Encrypt FIRWMARE with AES-GCM 
+    cipherNew = AES.new(key, AES.MODE_GCM, iv=iv)
+    output = cipherNew.encrypt(pad(firmware, AES.block_size))
+
+    # Adds metadata, encrypted firmware, and iv to a firmware_blob
     firmware_blob = metadata + output + iv
 
     # Hash firmware blob using SHA 256
@@ -47,7 +47,7 @@ def protect_firmware(infile, outfile, version, message):
     firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
 
      # Writes hash into secret output file 
-    with open('secret_build_output.txt', 'w') as f:
+    with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
     
     # Write firmware blob to outfile
