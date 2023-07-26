@@ -13,7 +13,6 @@ from Crypto.Hash import SHA256, HMAC
 from Crypto.Signature import pkcs1_15
 import os
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
 import random
 
@@ -32,29 +31,9 @@ def AESProtect(infile, outfile, version, message):
     with open('secret_build_output.txt', 'rb') as f:
         key = f.read(32)
 
-    #Seed AES Initialization Vector
-    seed=("AESIV") 
-    random.seed(seed)
-    iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
-
-    #writes iv to secret output file
-    with open('secret_build_output.txt', 'a') as f:
-        msg = "iv: ", iv
-        f.write(msg)
-
     # Hash firmware file using SHA 256
     hash = SHA256.new()
     hash.update(firmware)
-
-    # Writes hash into secret output file 
-    with open('secret_build_output.txt', 'a') as f:
-        f.write("overall file hash: ", hash) 
-
-    # Creates HMAC key
-    hmackey = HMAC.new(key, digestmod = SHA256)
-
-    # Creates SHA256 signature of encrypted file
-    hmac = HMAC.new(hmackey, firmware, digestmod = SHA256)
 
     # Append null-terminated message to end of firmware
     firmware_and_message = firmware + message.encode() + b'\00'
@@ -66,7 +45,7 @@ def AESProtect(infile, outfile, version, message):
     cipherNew = AES.new(key, AES.MODE_GCM)
     output = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Adds metadata, encrypted firmware, and iv to a firmware_blob
+    # Adds metadata and encrypted firmware to a firmware_blob
     firmware_blob = metadata + output
 
     # Hash firmware blob using SHA 256
