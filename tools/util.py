@@ -60,3 +60,4 @@ def chacha20poly1305Gen():
     ciphertext = cip.encrypt(nonce, firmware)
     return ciphertext
     # Unfinished- write ciphertext
+    # painrn
