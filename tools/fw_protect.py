@@ -9,12 +9,10 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
-from Crypto.Hash import SHA256, HMAC
-from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
 import os
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-import random
+from Crypto.Util.Padding import pad
 
 
 def AESProtect(infile, outfile, version, message):
@@ -43,7 +41,7 @@ def AESProtect(infile, outfile, version, message):
 
     # Encrypt FIRWMARE with AES-GCM 
     cipherNew = AES.new(key, AES.MODE_GCM)
-    output = cipherNew.encrypt(pad(firmware, AES.block_size))
+    output = cipherNew.encrypt(pad(firmware_and_message, AES.block_size))
 
     # Adds metadata and encrypted firmware to a firmware_blob
     firmware_blob = metadata + output
