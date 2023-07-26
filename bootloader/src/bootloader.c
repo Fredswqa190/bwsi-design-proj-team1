@@ -24,6 +24,9 @@ void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
+void deECC(void);
+void deAES(void);
+
 
 // Firmware Constants
 #define METADATA_BASE 0xFC00 // base address of version and firmware size in Flash
@@ -38,6 +41,9 @@ long program_flash(uint32_t, unsigned char *, unsigned int);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
+#define eccKey eccPrivKey
+#define aesKey eccPubKey
+
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -352,4 +358,12 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
         uart_write_str(uart, byte_str);
         uart_write_str(uart, " ");
     }
+}
+//decrypts ECC
+void deECC(){
+    //printf(eccKey);
+}
+//decrypts AES
+void deAES(){
+
 }
