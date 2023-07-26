@@ -21,8 +21,9 @@ def AESProtect(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
+    # Reads key for AES (should be read in bytes according to iv)
     with open('secret_build_output.txt', 'rb') as f:
-        key = f.read()
+        key = f.read(32)
 
     #Seed AES Initialization Vector
     seed=("AESIV") 
@@ -31,7 +32,8 @@ def AESProtect(infile, outfile, version, message):
 
     #writes iv to secret output file
     with open('secret_build_output.txt', 'a') as f:
-        f.write("iv: ", iv)
+        msg = "iv: ", iv
+        f.write(msg)
 
     # Hash firmware file using SHA 256
     hash = SHA256.new()
@@ -68,7 +70,6 @@ def AESProtect(infile, outfile, version, message):
     # Write firmware blob to outfile
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
