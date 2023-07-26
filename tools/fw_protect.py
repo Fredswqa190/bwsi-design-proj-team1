@@ -30,7 +30,7 @@ def AESProtect(infile, outfile, version, message):
     iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
 
     #writes iv to secret output file
-    with open('secret_build_output.txt', 'w') as f:
+    with open('secret_build_output.txt', 'a') as f:
         f.write("iv: ", iv)
 
     # Hash firmware file using SHA 256
@@ -38,15 +38,8 @@ def AESProtect(infile, outfile, version, message):
     hash.update(firmware)
 
     # Writes hash into secret output file 
-    with open('secret_build_output.txt', 'w') as f:
+    with open('secret_build_output.txt', 'a') as f:
         f.write("overall file hash: ", hash) 
-
-    # Creates a signature
-    signature = pkcs1_15.new()
-
-    # Writes signature into secret output file
-    with open('secret_build_output.txt', 'w') as f:
-        f.write("signature: ", signature)
 
     # Creates HMAC key
     hmackey = HMAC.new(key, digestmod = SHA256)
@@ -66,7 +59,11 @@ def AESProtect(infile, outfile, version, message):
     # Encrypt firmware blob with AES-GCM
     cipherNew = AES.new(key, AES.MODE_GCM)
     output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
-    firmware_blob = iv + output + cipherNew.digest()
+    firmware_blob = iv + output
+
+    # Writes hash into secret output file 
+    with open('secret_build_output.txt', 'a') as f:
+        f.write("AES digest: ", cipherNew.digest()) 
 
     # Write firmware blob to outfile
     with open(outfile, 'wb+') as outfile:

@@ -10,7 +10,7 @@ key = os.urandom(32)
 
 cip = ChaCha20Poly1305(key)
 
-with open(r'../firmware/gcc/main.bin', 'rb') as fp:
+with open('firmware/gcc/main.bin', 'rb') as fp:
     firmware = fp.read()
 
 nonce = os.urandom(12)
