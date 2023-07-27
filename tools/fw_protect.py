@@ -22,14 +22,9 @@ def AESProtect(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # test code ONLY
-    with open("secret_build_output.txt", "a") as f:
-        key = os.urandom(32)
-        f.write(str(key))
-
     # Reads key for AES (256 bit key length)
-    with open('secret_build_output.txt', 'rb') as f:
-        key = f.read(32)
+    with open('../bootloader/secret_build_output.txt', 'rb') as f:
+        AESkey = f.read(32)
 
     # Hash firmware file using SHA 256
     hash = SHA256.new()
@@ -42,7 +37,7 @@ def AESProtect(infile, outfile, version, message):
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(key, AES.MODE_GCM)
+    cipherNew = AES.new(AESkey, AES.MODE_GCM)
     output = cipherNew.encrypt(pad(firmware_and_message, AES.block_size))
 
     # Adds metadata and encrypted firmware to a firmware_blob
@@ -57,7 +52,7 @@ def AESProtect(infile, outfile, version, message):
     # Adds hash value and null-terminated message to end of blob
     firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
 
-     # Writes hash into secret output file 
+    # Writes hash into secret output file 
     with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
     
@@ -68,11 +63,15 @@ def AESProtect(infile, outfile, version, message):
         # Hashes the output file
         hash2 = SHA256.new()
         hash2.update(outfile)
-
+    
 def CC20P1305Protect(outfile):
-    with open(outfile, 'r') as infile:
-        firmwareEncrypt1 = infile.read()
-    header = b'stuff'
+    with open('../bootloader/secret_build_output.txt', 'rb') as f:
+        AESkey = f.read(32)
+        Chakey = f.read(32)
+    
+    #with open(outfile, 'r') as infile:
+    #    firmwareEncrypt1 = infile.read()
+    #header = b'stuff'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
@@ -83,4 +82,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     AESProtect(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
-    CC20P1305Protect(outfile=args.outfile)
+    CC20P1305Protect(outfile=args.infile)
