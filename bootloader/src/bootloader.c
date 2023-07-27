@@ -26,7 +26,7 @@ void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
-void deAES(uint16_t cSize, uint8_t cText[cSize]);
+void deAES(unsigned int cSize, unsigned char cText[cSize]);
 
 // Firmware Constants
 #define METADATA_BASE 0xFC00 // base address of version and firmware size in Flash
@@ -313,7 +313,7 @@ long program_flash(uint32_t page_addr, unsigned char *data, unsigned int data_le
         for (i = i; i < 4; i++){
             word = (word >> 8) | 0xFF000000;
         }
-
+        word = aes_decrypt(data_len);
         // Program word
         return FlashProgram(&word, page_addr + num_full_bytes, 4);
     }else{
@@ -358,10 +358,9 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
         uart_write_str(uart, " ");
     }
 }
-//decrypts ECC
 
 //decrypts AES
-void deAES(uint16_t cSize, uint8_t cText[cSize]){
+void deAES(unsigned int cSize, unsigned char cText[cSize]){
     aes_decrypt(aesKey, cText, cSize);
     uart_write(UART1, 'd');
 }
