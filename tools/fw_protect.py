@@ -24,7 +24,8 @@ def protect_firmware(infile, outfile, version, message):
 
     # Reads key for AES (should be read in bytes according to iv)
     with open('secret_build_output.txt', 'rb') as f:
-        key = f.read(32)
+        aesKey = f.read(32)
+        chaKey = f.read(32)
 
     # Generate AES Initialization Vector
     iv = os.urandom(12)
@@ -33,47 +34,25 @@ def protect_firmware(infile, outfile, version, message):
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(key, AES.MODE_GCM, iv=iv)
-    output = cipherNew.encrypt(pad(firmware, AES.block_size))
+    cipherNew = AES.new(aesKey, AES.MODE_GCM, iv=iv)
+    AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Adds metadata, encrypted firmware, and iv to a firmware_blob
-    firmware_blob = metadata + output + iv
+    # Adds metadata to firmware blob (this was supposed to hash AES too)
+    firmware_blob = metadata + AESoutput
 
     # Hash firmware blob using SHA 256
     hash = SHA256.new()
     hash.update(firmware_blob)
     hash_value = hash.digest()
 
-    # Adds hash value and null-terminated message to end of blob
-    firmware_blob = firmware_blob + hash_value + message.encode() + b'00'
-
      # Writes hash into secret output file 
     with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
     
-    # Write firmware blob to outfile
-    with open(outfile, 'wb+') as outfile:
-        outfile.write(firmware_blob)
-
-
-    #ChaCha20-Poly1305
-    #read chaKey and polyKey from secret file 
-    with open(secret_build_output, 'rb') as f:
-        ignore = f.read(32)
-        chaKey = f.read(32)
-        # polyKey = f.read(16)
-        # after this is the hash that was created above, that gets ignored as well
-        #personal note polyKey is not nonce, idk if i need it yet
-        #apparently "The library handles the derivation of the 128-bit Poly1305 secret key internally."
-    
-    #import firmware file from above 
-    with open(outfile, 'rb') as f:
-        firmware = fp.read()
-    
     #nonce generation
     nonce = get_random_bytes(12)
     
-    #associated data (usesd for authentication)
+    #associated data (used for authentication)
     associatedData = b"peepeepoopoodontchangethis" 
 
     #creates cipher
@@ -82,13 +61,21 @@ def protect_firmware(infile, outfile, version, message):
     #protect associated data
     cipher.update(associatedData)
 
-    #encrypts data
-    ciphertext, tag = cipher.encrypt_and_digest(firmware, associatedData)
+    #encrypts already encrypted AES data from before with chacha 
+    ciphertext, tag = cipher.encrypt_and_digest(AESoutput, associatedData)
 
     #put together the encrypted data in order to transmit
     encrypted = ciphertext + tag
+    
+    # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash
+    firmware_blob = firmware_blob + encrypted + iv + hash
 
+    # Adds null-terminated message to indicate ending
+    firmware_blob = firmware_blob + message.encode() + b'00'
 
+    # Write firmware blob to outfile
+    with open(outfile, 'wb+') as outfile:
+        outfile.write(firmware_blob)
 
 
 if __name__ == '__main__':
