@@ -59,8 +59,11 @@ def protect_firmware(infile, outfile, version, message):
     # protect associated data
     cipher.update(associatedData)
 
+    #adds aes output and hash to be chacha'd
+    AESoutput_hash = AESoutput + hash.digest()
+
     # encrypts already encrypted AES data from before with chacha 
-    ciphertext, tag = cipher.encrypt_and_digest(AESoutput)
+    ciphertext, tag = cipher.encrypt_and_digest(AESoutput_hash)
 
     # put together the encrypted data in order to transmit
     encrypted = ciphertext + tag
