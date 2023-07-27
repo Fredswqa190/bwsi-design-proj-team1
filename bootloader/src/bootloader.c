@@ -26,7 +26,6 @@ void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
-void deECC(void);
 void deAES(uint16_t cSize, uint8_t cText[cSize]);
 
 // Firmware Constants
@@ -42,7 +41,7 @@ void deAES(uint16_t cSize, uint8_t cText[cSize]);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
-#define aesKey 2//eccPubKey
+#define aesKey AES_KEY
 
 
 // Firmware v2 is embedded in bootloader
@@ -360,10 +359,7 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
     }
 }
 //decrypts ECC
-void deECC(){
-    //printf(eccKey);
 
-}
 //decrypts AES
 void deAES(uint16_t cSize, uint8_t cText[cSize]){
     aes_decrypt(aesKey, cText, cSize);
