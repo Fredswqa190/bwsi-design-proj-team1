@@ -60,18 +60,23 @@ def ChaChaslide(){
     with open(secret_build_output, 'rb') as f:
         ignore = f.read(32)
         chaKey = f.read(32)
-        polyKey = f.read(16)
-        #after this is the hash that was created above, that gets ignored as well
-        #personal note polyKey is not nonce
+        # polyKey = f.read(16)
+        # after this is the hash that was created above, that gets ignored as well
+        #personal note polyKey is not nonce, idk if i need it yet
+        #apparently "The library handles the derivation of the 128-bit Poly1305 secret key internally."
     
     #import firmware file from above 
     with open(outfile, 'rb') as f:
         firmware = fp.read()
     
     #creates cipher
-    cipher = ChaCha20_Poly1305.new(chaKeykey, nonce = None)
+    cipher = ChaCha20_Poly1305.new(chaKey, nonce = None)
 
-    #
+    #encrypts data
+    ciphertext, tag = cipher.encrypt_and_digest(firmware)
+
+    #put together the encrypted data
+    encrypted = ciphertext + tag
 
 
 }
