@@ -9,40 +9,70 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+import os
 from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad, unpad
 import random
-
+from Crypto.Cipher import ChaCha20_Poly1305
+from Crypto.Random import get_random_bytes
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
+    # Reads keys for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
-        key = f.read()
-
-    #Seed AES Initialization Vector
-    seed=("AESIV") 
-    random.seed(seed)
-    iv = ''.join(chr(random.randint(0, 0xFF)) for i in range(16))
-
-    # Append null-terminated message to end of firmware
-    firmware_and_message = firmware + message.encode() + b'\00'
+        aesKey = f.read(32)
+        chaKey = f.read(32)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
-    # Append firmware and message to metadata
-    firmware_blob = metadata + firmware_and_message
+    # Encrypt FIRWMARE with AES-GCM 
+    cipherNew = AES.new(aesKey, AES.MODE_GCM)
+    AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Encrypt firmware blob with AES-GCM
-    cipherNew = AES.new(key, AES.MODE_GCM)
-    output = cipherNew.encrypt(pad(firmware_blob, AES.block_size))
-    firmware_blob = iv + output + cipherNew.digest()
+    # Adds metadata and AES to firmware blob 
+    firmware_blob = metadata + AESoutput
+
+    # Hash firmware blob (metadata and AES) using SHA 256
+    hash = SHA256.new()
+    hash.update(firmware_blob)
+    hash_value = hash.digest()
+    print(hash_value)
+
+     # Writes hash into secret output file 
+    with open('secret_build_output.txt', 'wb') as f:
+        f.write(hash_value) 
+    
+    # Generates nonce with 12 bytes
+    nonce = get_random_bytes(12)
+    
+    # associated data created (used for authentication)
+    associatedData = b"peepeepoopoodontchangethis" 
+
+    #creates cipher for ChaCha
+    cipher = ChaCha20_Poly1305.new(key=chaKey, nonce = nonce)
+
+    # protect associated data
+    cipher.update(associatedData)
+
+    # encrypts already encrypted AES data from before with chacha 
+    ciphertext, tag = cipher.encrypt_and_digest(AESoutput)
+
+    # put together the encrypted data in order to transmit
+    encrypted = ciphertext + tag
+    
+    # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
+    firmware_blob = metadata + encrypted + hash.digest()
+
+    # Adds null-terminated message to indicate ending of blob
+    firmware_blob = firmware_blob + message.encode() + b'00'
 
     # Write firmware blob to outfile
-    with open(outfile, 'wb+') as outfile:
+    with open(outfile, 'wb') as outfile:
         outfile.write(firmware_blob)
 
 
