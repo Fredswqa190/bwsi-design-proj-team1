@@ -27,14 +27,11 @@ def protect_firmware(infile, outfile, version, message):
         aesKey = f.read(32)
         chaKey = f.read(32)
 
-    # Generate AES Initialization Vector
-    iv = os.urandom(12)
-
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(aesKey, AES.MODE_GCM, iv=iv)
+    cipherNew = AES.new(aesKey, AES.MODE_GCM)
     AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
 
     # Adds metadata and AES to firmware blob 
@@ -56,25 +53,25 @@ def protect_firmware(infile, outfile, version, message):
     associatedData = b"peepeepoopoodontchangethis" 
 
     #creates cipher for ChaCha
-    cipher = ChaCha20_Poly1305.new(chaKey, nonce = nonce)
+    cipher = ChaCha20_Poly1305.new(key=chaKey, nonce = nonce)
 
     # protect associated data
     cipher.update(associatedData)
 
     # encrypts already encrypted AES data from before with chacha 
-    ciphertext, tag = cipher.encrypt_and_digest(AESoutput, associatedData)
+    ciphertext, tag = cipher.encrypt_and_digest(AESoutput)
 
     # put together the encrypted data in order to transmit
     encrypted = ciphertext + tag
     
     # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
-    firmware_blob = firmware_blob + encrypted + iv + hash
+    firmware_blob = metadata + encrypted + hash.digest()
 
     # Adds null-terminated message to indicate ending of blob
     firmware_blob = firmware_blob + message.encode() + b'00'
 
     # Write firmware blob to outfile
-    with open(outfile, 'wb+') as outfile:
+    with open(outfile, 'wb') as outfile:
         outfile.write(firmware_blob)
 
 
