@@ -69,13 +69,22 @@ def ChaChaslide(){
     with open(outfile, 'rb') as f:
         firmware = fp.read()
     
+    #nonce generation
+    nonce = get_random_bytes(12)
+    
+    #associated data (usesd for authentication)
+    associatedData = b"peepeepoopoodontchangethis" 
+
     #creates cipher
-    cipher = ChaCha20_Poly1305.new(chaKey, nonce = None)
+    cipher = ChaCha20_Poly1305.new(chaKey, nonce = nonce)
+
+    #protect associated data
+    cipher.update(associatedData)
 
     #encrypts data
-    ciphertext, tag = cipher.encrypt_and_digest(firmware)
+    ciphertext, tag = cipher.encrypt_and_digest(firmware, associatedData)
 
-    #put together the encrypted data
+    #put together the encrypted data in order to transmit
     encrypted = ciphertext + tag
 
 
