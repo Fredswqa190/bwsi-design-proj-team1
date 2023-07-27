@@ -74,6 +74,7 @@ def make_bootloader() -> bool:
         
     # Writes keys into header file secrets.h as hex
     with open("../bootloader/src/secrets.h", "w") as f:
+        f.write("#include \"stdint.h\"\n")
         f.write("#ifndef SECRETS_H\n")
         f.write("#define SECRETS_H\n")
         setup = 'const uint8_t AES_KEY[32] = '
