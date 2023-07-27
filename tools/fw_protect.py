@@ -22,7 +22,7 @@ def protect_firmware(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
 
-    # Reads key for AES (should be read in bytes according to iv)
+    # Reads keys for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
         aesKey = f.read(32)
         chaKey = f.read(32)
@@ -37,10 +37,10 @@ def protect_firmware(infile, outfile, version, message):
     cipherNew = AES.new(aesKey, AES.MODE_GCM, iv=iv)
     AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
 
-    # Adds metadata to firmware blob (this was supposed to hash AES too)
+    # Adds metadata and AES to firmware blob 
     firmware_blob = metadata + AESoutput
 
-    # Hash firmware blob using SHA 256
+    # Hash firmware blob (metadata and AES) using SHA 256
     hash = SHA256.new()
     hash.update(firmware_blob)
     hash_value = hash.digest()
@@ -49,28 +49,28 @@ def protect_firmware(infile, outfile, version, message):
     with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
     
-    #nonce generation
+    # Generates nonce with 12 bytes
     nonce = get_random_bytes(12)
     
-    #associated data (used for authentication)
+    # associated data created (used for authentication)
     associatedData = b"peepeepoopoodontchangethis" 
 
-    #creates cipher
+    #creates cipher for ChaCha
     cipher = ChaCha20_Poly1305.new(chaKey, nonce = nonce)
 
-    #protect associated data
+    # protect associated data
     cipher.update(associatedData)
 
-    #encrypts already encrypted AES data from before with chacha 
+    # encrypts already encrypted AES data from before with chacha 
     ciphertext, tag = cipher.encrypt_and_digest(AESoutput, associatedData)
 
-    #put together the encrypted data in order to transmit
+    # put together the encrypted data in order to transmit
     encrypted = ciphertext + tag
     
-    # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash
+    # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
     firmware_blob = firmware_blob + encrypted + iv + hash
 
-    # Adds null-terminated message to indicate ending
+    # Adds null-terminated message to indicate ending of blob
     firmware_blob = firmware_blob + message.encode() + b'00'
 
     # Write firmware blob to outfile
