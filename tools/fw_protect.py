@@ -55,7 +55,8 @@ def protect_firmware(infile, outfile, version, message):
     with open(outfile, 'wb+') as outfile:
         outfile.write(firmware_blob)
 
-def ChaChaslide(){
+
+    #ChaCha20-Poly1305
     #read chaKey and polyKey from secret file 
     with open(secret_build_output, 'rb') as f:
         ignore = f.read(32)
@@ -88,7 +89,7 @@ def ChaChaslide(){
     encrypted = ciphertext + tag
 
 
-}
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
