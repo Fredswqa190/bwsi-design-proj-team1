@@ -46,11 +46,11 @@ def make_bootloader() -> bool:
     ChaKey = os.urandom(32) 
 
     # Writes keys into secret_build_output.txt
-    with open("secret_build_output.txt", "wt") as f:
-        f.write('\n')
-        f.write(str(AESkey))
-        f.write('\n')
-        f.write(str(ChaKey))
+    with open("secret_build_output.txt", "wb") as f:
+        #f.write('\n')
+        f.write(AESkey)
+        #f.write('\n')
+        f.write(ChaKey)
         
     # Writes keys into header file secrets.h as hex
     with open("../bootloader/src/secrets.h", "w") as f:
