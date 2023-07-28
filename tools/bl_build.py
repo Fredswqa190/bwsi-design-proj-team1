@@ -37,9 +37,13 @@ def make_bootloader() -> bool:
 
     subprocess.call("make clean", shell=True)
     status = subprocess.call("make")
+    
     #changed to only AES key; no ECC key gen -via
     AESkey = os.urandom(32)
     print(AESkey)
+
+    #adding iv
+    iv = os.urandom(12)
 
     #chacha slide generation happening here Luniva
     ChaKey = os.urandom(32) 
@@ -48,6 +52,8 @@ def make_bootloader() -> bool:
     with open("/home/jovyan/work/bwsi-design-proj-team1/tools/secret_build_output.txt", "wb") as f:
         #f.write('\n')
         f.write(AESkey)
+        #f,write('\n')
+        f.write(iv)
         #f.write('\n')
         f.write(ChaKey)
         
@@ -59,6 +65,12 @@ def make_bootloader() -> bool:
         setup = 'const uint8_t AES_KEY[32] = '
         f.write(setup)
         list = util.print_hex(AESkey)
+        print('{0x'+str(list)+"};")
+        f.write('{0x'+str(list))
+        f.write("};\n")
+        setup = "const uint8_t IV[16] = "
+        f.write(setup)
+        list = util.print_hex(iv)
         print('{0x'+str(list)+"};")
         f.write('{0x'+str(list))
         f.write("};\n")
