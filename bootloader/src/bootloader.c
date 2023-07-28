@@ -26,7 +26,7 @@ void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
-void deAES(unsigned int cSize, unsigned char cText[cSize]);
+void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 
 // Firmware Constants
 #define METADATA_BASE 0xFC00 // base address of version and firmware size in Flash
@@ -42,6 +42,7 @@ void deAES(unsigned int cSize, unsigned char cText[cSize]);
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
 #define aesKey AES_KEY
+#define iv IV
 
 
 // Firmware v2 is embedded in bootloader
@@ -360,7 +361,7 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
 }
 
 //decrypts AES
-void deAES(unsigned int cSize, unsigned char cText[cSize]){
-    aes_decrypt(aesKey, cText, cSize);
+void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]){
+    aes_decrypt(aesKey, iv, (uint8_t)cText, (uint16_t)cSize);
     uart_write(UART1, 'd');
 }
