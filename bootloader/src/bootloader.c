@@ -2,6 +2,7 @@
 // Approved for public release. Distribution unlimited 23-02181-13.
 
 // Hardware Imports
+//First commit
 #include "inc/hw_memmap.h" // Peripheral Base Addresses
 #include "inc/lm3s6965.h"  // Peripheral Bit Masks and Registers
 #include "inc/hw_types.h"  // Boolean type
@@ -11,6 +12,8 @@
 #include "driverlib/flash.h"     // FLASH API
 #include "driverlib/sysctl.h"    // System control API (clock/reset)
 #include "driverlib/interrupt.h" // Interrupt API
+
+#include "secrets.h"
 
 // Library Imports
 #include <string.h>
@@ -23,6 +26,7 @@ void load_initial_firmware(void);
 void load_firmware(void);
 void boot_firmware(void);
 long program_flash(uint32_t, unsigned char *, unsigned int);
+void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 
 // Firmware Constants
 #define METADATA_BASE 0xFC00 // base address of version and firmware size in Flash
@@ -37,6 +41,9 @@ long program_flash(uint32_t, unsigned char *, unsigned int);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
+#define aesKey AES_KEY
+#define iv IV
+
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
@@ -307,7 +314,7 @@ long program_flash(uint32_t page_addr, unsigned char *data, unsigned int data_le
         for (i = i; i < 4; i++){
             word = (word >> 8) | 0xFF000000;
         }
-
+        word = aes_decrypt(data_len);
         // Program word
         return FlashProgram(&word, page_addr + num_full_bytes, 4);
     }else{
@@ -351,4 +358,10 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
         uart_write_str(uart, byte_str);
         uart_write_str(uart, " ");
     }
+}
+
+//decrypts AES
+void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]){
+    aes_decrypt(aesKey, iv, (uint8_t)cText, (uint16_t)cSize);
+    uart_write(UART1, 'd');
 }
