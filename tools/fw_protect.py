@@ -25,13 +25,14 @@ def protect_firmware(infile, outfile, version, message):
     # Reads keys for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
         aesKey = f.read(32)
+        aesiv = f.read(12)
         chaKey = f.read(32)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(aesKey, AES.MODE_GCM)
+    cipherNew = AES.new(aesKey, AES.MODE_GCM, nonce=aesiv)
     AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
 
     # Adds metadata and AES to firmware blob 
