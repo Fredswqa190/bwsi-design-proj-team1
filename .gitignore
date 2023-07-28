@@ -10,5 +10,8 @@ bootloader/**/*.d
 bootloader/**/*.o
 bootloader/**/*.axf
 bootloader/**/*.bin
+bootloader/secret_build_output.txt
+
+tools/secret_build_output.txt
 
 **/__pycache__/

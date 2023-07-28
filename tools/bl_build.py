@@ -17,7 +17,6 @@ import subprocess
 from Crypto.PublicKey import ECC
 import util
 
-
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
 BOOTLOADER_DIR = os.path.join(REPO_ROOT, "bootloader")
 
@@ -38,28 +37,40 @@ def make_bootloader() -> bool:
 
     subprocess.call("make clean", shell=True)
     status = subprocess.call("make")
+    
     #changed to only AES key; no ECC key gen -via
     AESkey = os.urandom(32)
     print(AESkey)
+
+    #adding iv
+    iv = os.urandom(12)
 
     #chacha slide generation happening here Luniva
     ChaKey = os.urandom(32) 
 
     # Writes keys into secret_build_output.txt
-    with open("secret_build_output.txt", "wt") as f:
-        f.write('\n')
-        f.write(str(AESkey))
-        f.write('\n')
-        f.write(str(ChaKey))
+    with open("/home/jovyan/work/bwsi-design-proj-team1/tools/secret_build_output.txt", "wb") as f:
+        #f.write('\n')
+        f.write(AESkey)
+        #f,write('\n')
+        f.write(iv)
+        #f.write('\n')
+        f.write(ChaKey)
         
     # Writes keys into header file secrets.h as hex
-    with open("../bootloader/src/secrets.h", "wt") as f:
+    with open("../bootloader/src/secrets.h", "w") as f:
         f.write("#include \"stdint.h\"\n")
         f.write("#ifndef SECRETS_H\n")
         f.write("#define SECRETS_H\n")
         setup = 'const uint8_t AES_KEY[32] = '
         f.write(setup)
         list = util.print_hex(AESkey)
+        print('{0x'+str(list)+"};")
+        f.write('{0x'+str(list))
+        f.write("};\n")
+        setup = "const uint8_t IV[16] = "
+        f.write(setup)
+        list = util.print_hex(iv)
         print('{0x'+str(list)+"};")
         f.write('{0x'+str(list))
         f.write("};\n")

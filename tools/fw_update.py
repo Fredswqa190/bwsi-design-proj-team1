@@ -99,6 +99,9 @@ def update(ser, infile, debug):
 
     print("Done writing firmware.")
 
+    # Removes all file contents
+    open('secret_build_output.py.txt', 'w').close()
+
     # Send a zero length payload to tell the bootlader to finish writing it's page.
     ser.write(struct.pack(">H", 0x0000))
     resp = ser.read(1)  # Wait for an OK from the bootloader
