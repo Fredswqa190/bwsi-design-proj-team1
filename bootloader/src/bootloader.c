@@ -13,7 +13,12 @@
 #include "driverlib/sysctl.h"    // System control API (clock/reset)
 #include "driverlib/interrupt.h" // Interrupt API
 
+//importing secrets file
 #include "secrets.h"
+
+//importing bearssl
+#include "bearssl.h"
+#include "bearssl_ssl.h"
 
 // Library Imports
 #include <string.h>
@@ -43,6 +48,8 @@ void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 #define BOOT ((unsigned char)'B')
 #define aesKey AES_KEY
 #define iv IV
+#define chaKey CHA_KEY
+#define iv2 NONCE
 
 
 // Firmware v2 is embedded in bootloader
@@ -239,6 +246,15 @@ void load_firmware(void){
             if(frame_length == 0){
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
+
+            // Begin chach20 decryption here
+            br_sslrec_in_chapol_context chapol;
+            br_sslrec_in_chapol_init(&chapol, &br_aes_ct_cbcdec_vtable, chaKey, iv2);
+            //IM MAKING THIS CLEAR THIS DOES **NOT** WORK
+
+
+            //aes decryption
+            aes_decrypt(aesKey, iv, data, data_index);
             
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)){

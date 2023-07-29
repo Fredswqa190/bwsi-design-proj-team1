@@ -27,6 +27,7 @@ def protect_firmware(infile, outfile, version, message):
         aesKey = f.read(32)
         aesiv = f.read(12)
         chaKey = f.read(32)
+        nonce = f.read(12)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
@@ -47,9 +48,6 @@ def protect_firmware(infile, outfile, version, message):
      # Writes hash into secret output file 
     with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
-    
-    # Generates nonce with 12 bytes
-    nonce = get_random_bytes(12)
     
     # associated data created (used for authentication)
     associatedData = b"peepeepoopoodontchangethis" 
