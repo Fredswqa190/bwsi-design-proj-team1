@@ -31,12 +31,20 @@ from util import *
 
 RESP_OK = b"\x00"
 FRAME_SIZE = 256
-RESP_READY = b"\x10"
 
 
 def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack_from("<HH", metadata)
     print(f"Version: {version}\nSize: {size} bytes\n")
+
+    #old version
+    oldVersion = 1
+
+    if (version != 0 & version < oldVersion):
+        raise RuntimeError("version is not supported")
+
+    if (version == 0):
+        pass
 
     # Handshake for update
     ser.write(b"U")
@@ -83,12 +91,6 @@ def update(ser, infile, debug):
     firmware = firmware_blob[4:]
 
     send_metadata(ser, metadata, debug=debug)
-    
-    # clears secrets file
-    resp = ser.read(1)
-    if resp == RESP_READY:
-        open('../bootloader/src/secrets.h', 'w').close()
-        print("Bootloader responded with ready response")
 
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
