@@ -72,6 +72,19 @@ def protect_firmware(infile, outfile, version, message):
 
     # Adds null-terminated message to indicate ending of blob
     firmware_blob = firmware_blob + message.encode() + b'00'
+   
+    # add static firmware to check the updates
+    stat(outfile)
+
+    #set static size to amt of bytes
+    staticsize = 2840
+
+    #set length equal to firmware length
+    length = len(firmware)
+
+    #if length does not equal staticsize, raise error
+    if(length  != staticsize):
+        raise RuntimeError("wrong file size")
 
     # Write firmware blob to outfile
     with open(outfile, 'wb') as outfile:
