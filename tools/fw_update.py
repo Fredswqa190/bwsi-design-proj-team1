@@ -56,8 +56,6 @@ def send_metadata(ser, metadata, debug=False):
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
-#bloob
-
 def send_frame(ser, frame, debug=False):
     ser.write(frame)  # Write the frame...
 
@@ -111,6 +109,14 @@ def update(ser, infile, debug):
     print(f"Wrote zero length frame (2 bytes)")
 
     return ser
+
+#static firmware 
+def static_firmware_size(infile):
+    #read encrypted firmware file
+    with open(infile, "rb") as fp:
+        firmware = fp.read()
+
+    length = len(firmware)
 
 
 if __name__ == "__main__":
