@@ -61,6 +61,9 @@ def make_bootloader() -> bool:
         f.write(ChaKey)
         #f.write('\n')
         f.write(nonce)
+        # associated data created (used for authentication)
+        associatedData = b"peepeepoopoodontchangethis" 
+        f.write(associatedData)
         
     # Writes keys into header file secrets.h as hex
     with open("../bootloader/src/secrets.h", "w") as f:
@@ -88,6 +91,12 @@ def make_bootloader() -> bool:
         setup = 'const uint8_t NONCE[12] = '
         f.write(setup)
         list = util.print_hex(nonce)
+        print('{0x'+str(list)+"};")
+        f.write('{0x'+str(list))
+        f.write("};\n")
+        setup = 'const uint8_t AAD[26] = '
+        f.write(setup)
+        list = util.print_hex(associatedData)
         print('{0x'+str(list)+"};")
         f.write('{0x'+str(list))
         f.write("};\n")

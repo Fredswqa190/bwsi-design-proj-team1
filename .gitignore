@@ -11,6 +11,7 @@ bootloader/**/*.o
 bootloader/**/*.axf
 bootloader/**/*.bin
 bootloader/secret_build_output.txt
+bootloader/src/secrets.h
 
 tools/secret_build_output.txt
 

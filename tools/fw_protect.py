@@ -9,25 +9,23 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
-import os
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
-from Crypto.Util.Padding import pad, unpad
-import random
+from Crypto.Util.Padding import pad
 from Crypto.Cipher import ChaCha20_Poly1305
-from Crypto.Random import get_random_bytes
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
-
+        
     # Reads keys for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
         aesKey = f.read(32)
         aesiv = f.read(12)
         chaKey = f.read(32)
         nonce = f.read(12)
+        associatedData  = f.read(26)
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
@@ -49,9 +47,6 @@ def protect_firmware(infile, outfile, version, message):
     with open('secret_build_output.txt', 'wb') as f:
         f.write(hash_value) 
     
-    # associated data created (used for authentication)
-    associatedData = b"peepeepoopoodontchangethis" 
-
     #creates cipher for ChaCha
     cipher = ChaCha20_Poly1305.new(key=chaKey, nonce = nonce)
 
@@ -63,15 +58,18 @@ def protect_firmware(infile, outfile, version, message):
 
     # encrypts already encrypted AES data from before with chacha 
     ciphertext, tag = cipher.encrypt_and_digest(AESoutput_hash)
-
-    # put together the encrypted data in order to transmit
-    encrypted = ciphertext + tag
     
     # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
-    firmware_blob = metadata + encrypted + hash.digest()
+    firmware_blob = metadata + ciphertext + tag + hash.digest()
+    print(len(metadata))
+    print(len(ciphertext))
+    print(type(tag))
+    print(len(hash.digest()))
 
     # Adds null-terminated message to indicate ending of blob
     firmware_blob = firmware_blob + message.encode() + b'00'
+
+    print(len(firmware_blob))
 
     #set static size to amt of bytes
     staticsize = 2840
