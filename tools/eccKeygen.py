@@ -1,3 +1,4 @@
+'''
 from Crypto.PublicKey import ECC
 
 key = ECC.generate(curve='P-256')
@@ -15,3 +16,4 @@ f.write(eccPubKey)
 #f = open('secret_build_output.txt','rt')
 
 #privkey = ECC.import_key(f.read())
+'''
