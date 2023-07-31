@@ -32,17 +32,18 @@ from util import *
 RESP_OK = b"\x00"
 FRAME_SIZE = 256
 
-
+# version control to ensure old versions cant be used
 def send_metadata(ser, metadata, debug=False):
     version, size = struct.unpack_from("<HH", metadata)
     print(f"Version: {version}\nSize: {size} bytes\n")
 
     #old version
     oldVersion = 1
-
+    # if the version input is lower than the current and not zero, do not use
     if (version != 0 & version < oldVersion):
+        #stop the run because the version requested is too old
         raise RuntimeError("version is not supported")
-
+    #if the version is 0, its good (reboot)
     if (version == 0):
         pass
 
