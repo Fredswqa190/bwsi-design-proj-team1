@@ -378,6 +378,6 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
 
 //decrypts AES
 void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]){
-    aes_decrypt(aesKey, iv, (uint8_t)cText, (uint16_t)cSize);
+    aes_decrypt(aesKey, iv, (uint8_t*)cText, (uint16_t*)cSize);
     uart_write(UART1, 'd');
 }
