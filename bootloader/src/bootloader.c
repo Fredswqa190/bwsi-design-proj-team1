@@ -64,6 +64,7 @@ uint8_t* aesKey = AES_KEY;
 uint8_t* iv = IV;
 uint8_t* chaKey = CHA_KEY;
 uint8_t* iv2 = NONCE;
+uint8_t* aad = AAD;
 
 // Device metadata
 uint16_t *fw_version_address = (uint16_t *)METADATA_BASE;
