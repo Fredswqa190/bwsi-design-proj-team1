@@ -52,7 +52,8 @@ def make_bootloader() -> bool:
     nonce = os.urandom(12)
 
     # Writes keys into secret_build_output.txt
-    '''with open("tools/secret_build_output.txt", "w") as f:
+    with open("../tools/secret_build_output.txt", "wb") as f:
+        
         #f.write('\n')
         f.write(AESkey)
         #f,write('\n')
@@ -61,10 +62,10 @@ def make_bootloader() -> bool:
         f.write(ChaKey)
         #f.write('\n')
         f.write(nonce)
-        '''
+        
         # associated data created (used for authentication)
-    associatedData = b"peepeepoopoodontchangethis" 
-    #f.write(associatedData)
+        associatedData = b"peepeepoopoodontchangethis" 
+        f.write(associatedData)
         
     # Writes keys into header file secrets.h as hex
     with open("../bootloader/src/secrets.h", "w") as f:
