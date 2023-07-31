@@ -19,6 +19,8 @@
 //importing bearssl
 #include "bearssl.h"
 #include "bearssl_ssl.h"
+#include <beaverssl.h>
+#include "bearssl_block.h"
 
 // Library Imports
 #include <string.h>
@@ -50,6 +52,7 @@ void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 #define iv IV
 #define chaKey CHA_KEY
 #define iv2 NONCE
+#define aad AAD
 
 
 // Firmware v2 is embedded in bootloader
@@ -224,7 +227,6 @@ void load_firmware(void){
     program_flash(METADATA_BASE, (uint8_t *)(&metadata), 4);
 
     uart_write(UART1, OK); // Acknowledge the metadata.
-
     /* Loop here until you can get all your characters and stuff */
     while (1){
 
@@ -247,10 +249,16 @@ void load_firmware(void){
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
 
-            // Begin chach20 decryption here
-            br_sslrec_in_chapol_context chapol;
-            br_sslrec_in_chapol_init(&chapol, &br_aes_ct_cbcdec_vtable, chaKey, iv2);
-            //IM MAKING THIS CLEAR THIS DOES **NOT** WORK
+            void* tag;
+
+            for (int i=2787; i<data_index-32; i++){
+                tag += data[i];
+            }
+
+            br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
+            
+            //chacha20 decryption function????
+            br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
 
 
             //aes decryption
@@ -330,7 +338,6 @@ long program_flash(uint32_t page_addr, unsigned char *data, unsigned int data_le
         for (i = i; i < 4; i++){
             word = (word >> 8) | 0xFF000000;
         }
-        word = aes_decrypt(data_len);
         // Program word
         return FlashProgram(&word, page_addr + num_full_bytes, 4);
     }else{
@@ -377,7 +384,28 @@ void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len) {
 }
 
 //decrypts AES
-void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]){
+/*void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]){
     aes_decrypt(aesKey, iv, (uint8_t*)cText, (uint16_t*)cSize);
     uart_write(UART1, 'd');
+}*/
+
+//decrypts chacha20poly1305
+/*void deCC20(char* key, char* nonce, char* ctext, int cSize){
+    const br_sslrec_in_chapol_class* vd = &br_sslrec_out_clear_vtable;
+
+
+    return 1;
 }
+
+
+int aes_decrypt(char* key, char* iv, char* ct, int len) {
+    const br_block_cbcdec_class* vd = &br_aes_big_cbcdec_vtable;
+    br_aes_gen_cbcdec_keys v_dc;
+    const br_block_cbcdec_class **dc;
+
+    dc = &v_dc.vtable;
+    vd->init(dc, key, KEY_LEN);
+    vd->run(dc, iv, ct, len);
+
+    return 1;
+}*/
