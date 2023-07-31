@@ -117,7 +117,7 @@ def static_firmware_size(infile):
         firmware = fp.read()
 
     # Sets static size to correct amount of bytes (metadata + cipher + tag + hash)
-    staticsize = 4 + 2784 + 16 + 32
+    staticsize = 2840
 
     # Sets equal to length of current firmware
     length = len(firmware)
