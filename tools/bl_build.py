@@ -31,13 +31,6 @@ def copy_initial_firmware(binary_path: str):
 
 
 def make_bootloader() -> bool:
-    # Build the bootloader from source.
-
-    os.chdir(BOOTLOADER_DIR)
-
-    subprocess.call("make clean", shell=True)
-    status = subprocess.call("make")
-    
     #changed to only AES key; no ECC key gen -via
     AESkey = os.urandom(32)
     print(AESkey)
@@ -102,6 +95,13 @@ def make_bootloader() -> bool:
         f.write("};\n")
         f.write("#endif")
         
+    # Build the bootloader from source.
+
+    os.chdir(BOOTLOADER_DIR)
+
+    subprocess.call("make clean", shell=True)
+    status = subprocess.call("make")
+    
     # Return True if make returned 0, otherwise return False.
     return status == 0
 
