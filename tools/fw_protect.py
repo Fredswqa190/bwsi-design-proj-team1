@@ -9,12 +9,20 @@ Firmware Bundle-and-Protect Tool
 """
 import argparse
 import struct
+import os
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad
 from Crypto.Cipher import ChaCha20_Poly1305
 
 def protect_firmware(infile, outfile, version, message):
+
+    if (os.path.isfile(infile) == False):
+        raise RuntimeError("Not a valid file")
+
+    if (os.path.isfile(outfile) == False):
+        raise RuntimeError("Not a valid file")
+
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
