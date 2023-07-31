@@ -48,17 +48,22 @@ void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
-#define aesKey AES_KEY
+/*#define aesKey AES_KEY
 #define iv IV
 #define chaKey CHA_KEY
 #define iv2 NONCE
-#define aad AAD
+#define aad AAD*/
 
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
 extern int _binary_firmware_bin_start;
 extern int _binary_firmware_bin_size;
+
+uint8_t* aesKey = AES_KEY;
+uint8_t* iv = IV;
+uint8_t* chaKey = CHA_KEY;
+uint8_t* iv2 = NONCE;
 
 // Device metadata
 uint16_t *fw_version_address = (uint16_t *)METADATA_BASE;
