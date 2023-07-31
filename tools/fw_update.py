@@ -56,6 +56,7 @@ def send_metadata(ser, metadata, debug=False):
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
+#bloob
 
 def send_frame(ser, frame, debug=False):
     ser.write(frame)  # Write the frame...
