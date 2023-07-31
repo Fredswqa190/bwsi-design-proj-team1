@@ -152,6 +152,7 @@ if __name__ == "__main__":
     uart2_sock.close()
     uart0_sock.close()
 
+    static_firmware_size(infile = args.firmware)
     update(ser=uart1, infile=args.firmware, debug=args.debug)
 
     uart1_sock.close()
