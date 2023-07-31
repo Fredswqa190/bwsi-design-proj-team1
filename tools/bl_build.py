@@ -20,9 +20,6 @@ import util
 REPO_ROOT = pathlib.Path(__file__).parent.parent.absolute()
 BOOTLOADER_DIR = os.path.join(REPO_ROOT, "bootloader")
 
-
-
-
 def copy_initial_firmware(binary_path: str):
     # Copy the initial firmware binary to the bootloader build directory
 

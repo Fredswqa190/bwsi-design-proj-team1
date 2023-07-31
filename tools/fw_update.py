@@ -39,10 +39,12 @@ def send_metadata(ser, metadata, debug=False):
 
     #old version
     oldVersion = 1
+    
     # if the version input is lower than the current and not zero, do not use
     if (version != 0 & version < oldVersion):
         #stop the run because the version requested is too old
         raise RuntimeError("version is not supported")
+    
     #if the version is 0, its good (reboot)
     if (version == 0):
         pass

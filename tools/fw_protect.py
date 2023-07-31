@@ -16,10 +16,11 @@ from Crypto.Util.Padding import pad
 from Crypto.Cipher import ChaCha20_Poly1305
 
 def protect_firmware(infile, outfile, version, message):
-
+    #input validation for infile
     if (os.path.isfile(infile) == False):
         raise RuntimeError("Not a valid file")
 
+    #input validation for output
     if (os.path.isfile(outfile) == False):
         raise RuntimeError("Not a valid file")
 
