@@ -249,10 +249,10 @@ void load_firmware(void){
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
 
-            void* tag;
+            uint8_t tag[32];
 
-            for (int i=2787; i<data_index-32; i++){
-                tag += data[i];
+            for (int i=0; i<32; i++){
+                tag[i] = data[i+2787];
             }
 
             br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
