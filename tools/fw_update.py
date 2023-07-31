@@ -116,12 +116,15 @@ def static_firmware_size(infile):
     with open(infile, "rb") as fp:
         firmware = fp.read()
 
+    # Sets static size to correct amount of bytes (metadata + cipher + tag + hash)
+    staticsize = 4 + 2784 + 16 + 32
+
     # Sets equal to length of current firmware
     length = len(firmware)
 
     # If length of file is not equal to proper size, raises error
     if(length != staticsize):
-        raise RuntimeError("Wrong file size, needs to be constant")
+        raise RuntimeError("Wrong file size")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Firmware Update Tool")
