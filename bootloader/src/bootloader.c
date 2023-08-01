@@ -277,17 +277,19 @@ void load_firmware(void){
         uart_write_str(UART2, aes_decrypt(aesKey, iv, data, data_index));
            // }
     while (1){
+        //flash per 1024 i.e. data[i, i+1024]; i+=1024
+
         // If we filed our page buffer, program it
         if (frame_length == 0){
             // Try to write flash and check for error
-            if (program_flash(page_addr, data, data_index)){
+            if (program_flash(page_addr, data, FLASH_PAGESIZE)){
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
                 return;
             }
 
             // Verify flash program
-            if (memcmp(data, (void *) page_addr, data_index) != 0){
+            if (memcmp(data, (void *) page_addr, FLASH_PAGESIZE) != 0){
                 uart_write_str(UART2, "Flash check failed.\n");
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
@@ -298,7 +300,7 @@ void load_firmware(void){
             uart_write_str(UART2, "Page successfully programmed\nAddress: ");
             uart_write_hex(UART2, page_addr);
             uart_write_str(UART2, "\nBytes: ");
-            uart_write_hex(UART2, data_index);
+            uart_write_hex(UART2, FLASH_PAGESIZE);
             nl(UART2);
 
             // Update to next page
