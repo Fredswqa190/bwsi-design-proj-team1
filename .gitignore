@@ -14,5 +14,6 @@ bootloader/secret_build_output.txt
 bootloader/src/secrets.h
 
 tools/secret_build_output.txt
+tools/gdb
 
 **/__pycache__/
