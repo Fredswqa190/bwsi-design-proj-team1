@@ -94,9 +94,10 @@ int main(void){
     load_initial_firmware(); // note the short-circuit behavior in this function, it doesn't finish running on reset!
 
     uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
+    uart_write_str(UART1, "For testing to see if this works.\n");
     uart_write_str(UART2, "Send \"U\" to update, and \"B\" to run the firmware.\n");
     uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
-    uart_write_str(UART2, "For testing to see if this works.\n");
+
 
     int resp;
     while (1){
@@ -129,7 +130,7 @@ void load_initial_firmware(void){
 
     // Create buffers for saving the release message
     uint8_t temp_buf[FLASH_PAGESIZE];
-    char initial_msg[] = "This is the initial release message.";
+    char initial_msg[] = "This is the initial release message. This is test";
     uint16_t msg_len = strlen(initial_msg) + 1;
     uint16_t rem_msg_bytes;
 
