@@ -45,7 +45,8 @@ def make_bootloader() -> bool:
     nonce = os.urandom(12)
 
     # Writes keys into secret_build_output.txt
-    with open("/home/jovyan/work/bwsi-design-proj-team1/tools/secret_build_output.txt", "wb") as f:
+    with open("../tools/secret_build_output.txt", "wb") as f:
+        
         #f.write('\n')
         f.write(AESkey)
         #f,write('\n')
@@ -54,6 +55,7 @@ def make_bootloader() -> bool:
         f.write(ChaKey)
         #f.write('\n')
         f.write(nonce)
+        
         # associated data created (used for authentication)
         associatedData = b"peepeepoopoodontchangethis" 
         f.write(associatedData)
@@ -95,6 +97,7 @@ def make_bootloader() -> bool:
         f.write("};\n")
         f.write("#endif")
         
+
     # Build the bootloader from source.
 
     os.chdir(BOOTLOADER_DIR)
