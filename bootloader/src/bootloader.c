@@ -96,6 +96,7 @@ int main(void){
     uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
     uart_write_str(UART2, "Send \"U\" to update, and \"B\" to run the firmware.\n");
     uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
+    uart_write_str(UART2, "For testing to see if this works.\n");
 
     int resp;
     while (1){
