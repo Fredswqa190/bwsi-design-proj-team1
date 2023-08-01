@@ -245,7 +245,7 @@ void load_firmware(void){
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length += (int)rcv;
 
-        // Get the number of bytes specified
+    // Get the number of bytes specified and filled the buffer
     for (int i = 0; i < sizeOf(buffer); ++i){
         data[data_index] = uart_read(UART1, BLOCKING, &read);
         buffer[data_index] = data[data_index];
