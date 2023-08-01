@@ -259,7 +259,7 @@ void load_firmware(void){
     }
     while (1){
         // If we filed our page buffer, program it
-        if (data_index == FLASH_PAGESIZE || frame_length == 0){
+        if (frame_length == 0){
 
             if(frame_length == 0){
                 uart_write_str(UART2, "Got zero length frame.\n");
