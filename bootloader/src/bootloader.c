@@ -251,7 +251,9 @@ void load_firmware(void){
         buffer[data_index] = data[data_index];
         data_index += 1;
     } // for
-
+    if (data_index != 2840){
+        exit(1);
+    }
     while (1){
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0){
