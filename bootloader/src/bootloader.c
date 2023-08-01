@@ -253,36 +253,32 @@ void load_firmware(void){
         buffer[data_index] = data[data_index];
         data_index += 1;
     } // for
+    if(frame_length == 0){
+        uart_write_str(UART2, "Got zero length frame.\n");
+    }
     if (data_index != BUFFERSIZE){
         uart_write(UART1, ERROR);
         SysCtlReset();
     }
-    while (1){
-        // If we filed our page buffer, program it
-        if (frame_length == 0){
+    uint8_t tag[32];
+    for (int i=0; i<32; i++){
+        tag[i] = data[i+2787];
+        }
 
-            if(frame_length == 0){
-                uart_write_str(UART2, "Got zero length frame.\n");
-            }
-
-            uint8_t tag[32];
-
-            for (int i=0; i<32; i++){
-                tag[i] = data[i+2787];
-            }
-
-            br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
+        br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
             
             //chacha20 decryption function????
-            br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
+        br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
 
 
             //aes decryption
             //char* mess[256];
             //for(int i = 0; i <256; i++){
-                uart_write_str(UART2, aes_decrypt(aesKey, iv, data, data_index));
+        uart_write_str(UART2, aes_decrypt(aesKey, iv, data, data_index));
            // }
-            
+    while (1){
+        // If we filed our page buffer, program it
+        if (frame_length == 0){
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)){
                 uart_write(UART1, ERROR); // Reject the firmware
