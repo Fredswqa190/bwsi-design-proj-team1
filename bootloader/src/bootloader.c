@@ -43,6 +43,9 @@ void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 #define FLASH_PAGESIZE 1024
 #define FLASH_WRITESIZE 4
 
+// firmware constants
+#define BUFFERSIZE 2840
+
 // Protocol Constants
 #define OK ((unsigned char)0x00)
 #define ERROR ((unsigned char)0x01)
@@ -96,7 +99,6 @@ int main(void){
     load_initial_firmware(); // note the short-circuit behavior in this function, it doesn't finish running on reset!
 
     uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
-    uart_write_str(UART1, "For testing to see if this works.\n");
     uart_write_str(UART2, "Send \"U\" to update, and \"B\" to run the firmware.\n");
     uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
 
@@ -246,12 +248,12 @@ void load_firmware(void){
         frame_length += (int)rcv;
 
         // Get the number of bytes specified
-    for (int i = 0; i < sizeOf(buffer); ++i){
+    for (int i = 0; i < BUFFERSIZE; ++i){
         data[data_index] = uart_read(UART1, BLOCKING, &read);
         buffer[data_index] = data[data_index];
         data_index += 1;
     } // for
-    if (data_index != 2840){
+    if (data_index != BUFFERSIZE){
         uart_write(UART1, ERROR);
         SysCtlReset();
     }

@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "bearssl.h": "c",
+        "bearssl_ssl.h": "c",
+        "beaverssl.h": "c"
+    }
+}
