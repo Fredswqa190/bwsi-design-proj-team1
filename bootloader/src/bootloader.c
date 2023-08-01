@@ -48,17 +48,25 @@ void deAES(unsigned int cSize, unsigned char cText[cSize], uint8_t iv[16]);
 #define ERROR ((unsigned char)0x01)
 #define UPDATE ((unsigned char)'U')
 #define BOOT ((unsigned char)'B')
-#define aesKey AES_KEY
+/*#define aesKey AES_KEY
 #define iv IV
 #define chaKey CHA_KEY
 #define iv2 NONCE
-#define aad AAD
+#define aad AAD*/
 
 
 // Firmware v2 is embedded in bootloader
 // Read up on these symbols in the objcopy man page (if you want)!
 extern int _binary_firmware_bin_start;
 extern int _binary_firmware_bin_size;
+
+uint8_t* aesKey = AES_KEY;
+uint8_t* iv = IV;
+uint8_t* chaKey = CHA_KEY;
+uint8_t* iv2 = NONCE;
+uint8_t* aad = AAD;
+
+uint16_t buffer[2840];
 
 // Device metadata
 uint16_t *fw_version_address = (uint16_t *)METADATA_BASE;
@@ -88,8 +96,10 @@ int main(void){
     load_initial_firmware(); // note the short-circuit behavior in this function, it doesn't finish running on reset!
 
     uart_write_str(UART2, "Welcome to the BWSI Vehicle Update Service!\n");
+    uart_write_str(UART1, "For testing to see if this works.\n");
     uart_write_str(UART2, "Send \"U\" to update, and \"B\" to run the firmware.\n");
     uart_write_str(UART2, "Writing 0x20 to UART0 will reset the device.\n");
+
 
     int resp;
     while (1){
@@ -122,7 +132,7 @@ void load_initial_firmware(void){
 
     // Create buffers for saving the release message
     uint8_t temp_buf[FLASH_PAGESIZE];
-    char initial_msg[] = "This is the initial release message.";
+    char initial_msg[] = "This is the initial release message. This is test";
     uint16_t msg_len = strlen(initial_msg) + 1;
     uint16_t rem_msg_bytes;
 
@@ -228,20 +238,24 @@ void load_firmware(void){
 
     uart_write(UART1, OK); // Acknowledge the metadata.
     /* Loop here until you can get all your characters and stuff */
-    while (1){
 
-        // Get two bytes for the length.
+    // Get two bytes for the length.
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length = (int)rcv << 8;
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length += (int)rcv;
 
         // Get the number of bytes specified
-        for (int i = 0; i < frame_length; ++i){
-            data[data_index] = uart_read(UART1, BLOCKING, &read);
-            data_index += 1;
-        } // for
-
+    for (int i = 0; i < sizeOf(buffer); ++i){
+        data[data_index] = uart_read(UART1, BLOCKING, &read);
+        buffer[data_index] = data[data_index];
+        data_index += 1;
+    } // for
+    if (data_index != 2840){
+        uart_write(UART1, ERROR);
+        SysCtlReset();
+    }
+    while (1){
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0){
 
@@ -262,7 +276,10 @@ void load_firmware(void){
 
 
             //aes decryption
-            aes_decrypt(aesKey, iv, data, data_index);
+            //char* mess[256];
+            //for(int i = 0; i <256; i++){
+                uart_write_str(UART2, aes_decrypt(aesKey, iv, data, data_index));
+           // }
             
             // Try to write flash and check for error
             if (program_flash(page_addr, data, data_index)){
