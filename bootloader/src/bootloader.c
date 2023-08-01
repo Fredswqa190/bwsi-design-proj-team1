@@ -252,7 +252,8 @@ void load_firmware(void){
         data_index += 1;
     } // for
     if (data_index != 2840){
-        exit(1);
+        uart_write(UART1, ERROR);
+        SysCtlReset();
     }
     while (1){
         // If we filed our page buffer, program it
