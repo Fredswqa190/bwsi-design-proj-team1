@@ -28,6 +28,7 @@ import time
 import socket
 
 from util import *
+#from fw_protect import lengthCheck
 
 RESP_OK = b"\x00"
 FRAME_SIZE = 256
@@ -120,20 +121,22 @@ def update(ser, infile, debug):
     return ser
 
 #static firmware 
+"""
 def static_firmware_size(infile):
     #read encrypted firmware file
     with open(infile, "rb") as fp:
         firmware = fp.read()
 
-    # Sets static size to correct amount of bytes (metadata + cipher + tag + hash)
-    staticsize = 2840
-
     # Sets equal to length of current firmware
     length = len(firmware)
+
+    # Sets static size to correct amount of bytes (metadata + cipher + tag + hash)
+    staticsize = lengthCheck(length)
 
     # If length of file is not equal to proper size, raises error
     if(length != staticsize):
         raise RuntimeError("Wrong file size")
+"""
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Firmware Update Tool")
@@ -161,7 +164,7 @@ if __name__ == "__main__":
     uart2_sock.close()
     uart0_sock.close()
 
-    static_firmware_size(infile = args.firmware)
+    #static_firmware_size(infile = args.firmware)
     update(ser=uart1, infile=args.firmware, debug=args.debug)
 
     uart1_sock.close()

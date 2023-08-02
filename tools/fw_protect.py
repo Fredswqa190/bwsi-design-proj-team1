@@ -13,11 +13,14 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto.Util.Padding import pad
 from Crypto.Cipher import ChaCha20_Poly1305
+import util
 
 def protect_firmware(infile, outfile, version, message):
     # Load firmware binary from infile
     with open(infile, 'rb') as fp:
         firmware = fp.read()
+        print('firmware:' +str(len(firmware)))
+        fwSize=len(firmware)
         
     # Reads keys for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
@@ -29,15 +32,18 @@ def protect_firmware(infile, outfile, version, message):
 
     # Pack version and size into two little-endian shorts
     metadata = struct.pack('<HH', version, len(firmware))
+    print(metadata)
+
+    firmwareAndSize = fwSize.to_bytes(16, "little")+ firmware
 
     # Encrypt FIRWMARE with AES-GCM 
     cipherNew = AES.new(aesKey, AES.MODE_GCM, nonce=aesiv)
-    AESoutput = cipherNew.encrypt(pad(firmware, AES.block_size))
+    AESoutput = cipherNew.encrypt(pad(firmwareAndSize, AES.block_size))
 
-    # Adds metadata and AES to firmware blob 
-    firmware_blob = metadata + AESoutput
+    # Adds AES to firmware blob 
+    firmware_blob = AESoutput
 
-    # Hash firmware blob (metadata and AES) using SHA 256
+    # Hash firmware blob (AES) using SHA 256
     hash = SHA256.new()
     hash.update(firmware_blob)
     hash_value = hash.digest()
@@ -55,36 +61,49 @@ def protect_firmware(infile, outfile, version, message):
 
     #adds aes output and hash to be chacha'd
     AESoutput_hash = AESoutput + hash.digest()
+    AESlen=len(AESoutput)
+
+    print('hash digest: ' +str(len(hash.digest())))
+    print('aes: ' +str(len(AESoutput)))
+    print('aes&Hash: ' +str(len(AESoutput_hash)))
 
     # encrypts already encrypted AES data from before with chacha 
     ciphertext, tag = cipher.encrypt_and_digest(AESoutput_hash)
     
+    #generates size of ciphertext
+    cTextSize = len(ciphertext)
+
     # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
-    firmware_blob = metadata + ciphertext + tag + hash.digest()
-    print(len(metadata))
-    print(len(ciphertext))
-    print(type(tag))
-    print(len(hash.digest()))
+    firmware_blob = cTextSize.to_bytes(16, 'little') + AESlen.to_bytes(16, 'little')+ ciphertext + tag + hash.digest()
 
-    # Adds null-terminated message to indicate ending of blob
-    firmware_blob = firmware_blob + message.encode() + b'00'
-
-    print(len(firmware_blob))
-
-    #set static size to amt of bytes
-    staticsize = 2840
+    print('ciphertext: '+str(cTextSize))
+    print('tag: ' + str(len(tag)))
+    print('hash digest: ' + str(len(hash.digest())))
 
     #set length equal to firmware length    
     length = len(firmware_blob)
 
-    #if length does not equal staticsize, raise error
-    if(length  != staticsize):
-        raise RuntimeError("wrong file size")
+    # Adds null-terminated message to indicate ending of blob
+    firmware_blob1 = firmware_blob + message.encode() + b'00'
+
+    print('message: ' + str(len(message.encode())))
+    print('firmware blob: '+str(len(firmware_blob)))
+
+    #adding size
+    #structure: metadata, total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
+    firmware_blob=metadata+length.to_bytes(16, 'little')+firmware_blob1
+    print('metadata: ' + str(len(metadata)))
+    
+    print(len(firmware_blob))
+
 
     # Write firmware blob to outfile
     with open(outfile, 'wb') as outfile:
         outfile.write(firmware_blob)
 
+"""def lengthCheck(firmware_blob):
+        length = len(firmware_blob)
+        return length"""
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Firmware Update Tool')
