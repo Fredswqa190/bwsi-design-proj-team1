@@ -24,8 +24,8 @@ def protect_firmware(infile, outfile, version, message):
         
     # Reads keys, IV, nonce, etc for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
-        aesKey = f.read(32)
-        aesiv = f.read(12)
+        aesKey = f.read(16)
+        aesiv = f.read(16)
         chaKey = f.read(32)
         nonce = f.read(12)
         associatedData  = f.read(26)
@@ -38,9 +38,8 @@ def protect_firmware(infile, outfile, version, message):
     firmwareAndSize = fwSize.to_bytes(16, "little")+ firmware
 
     # Encrypt FIRWMARE with AES-GCM 
-    cipherNew = AES.new(aesKey, AES.MODE_GCM, nonce=aesiv)
-    AESoutput = cipherNew.encrypt(pad(firmwareAndSize, AES.block_size))
-
+    cipherNew = AES.new(aesKey, AES.MODE_CBC, iv=aesiv)
+    AESoutput= cipherNew.encrypt(pad(firmwareAndSize, AES.block_size))
     # Adds AES to firmware blob 
     firmware_blob = AESoutput
 

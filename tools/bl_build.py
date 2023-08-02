@@ -32,11 +32,11 @@ def copy_initial_firmware(binary_path: str):
 
 def make_bootloader() -> bool:
     #changed to only AES key; no ECC key gen -via
-    AESkey = os.urandom(32)
+    AESkey = os.urandom(16)
     print(AESkey)
 
     #adding iv
-    iv = os.urandom(12)
+    iv = os.urandom(16)
 
     #chacha slide generation happening here Luniva
     ChaKey = os.urandom(32) 
@@ -65,7 +65,7 @@ def make_bootloader() -> bool:
         f.write("#include \"stdint.h\"\n")
         f.write("#ifndef SECRETS_H\n")
         f.write("#define SECRETS_H\n")
-        setup = 'const uint8_t AES_KEY[32] = '
+        setup = 'const uint8_t AES_KEY[16] = '
         f.write(setup)
         list = util.print_hex(AESkey)
         print('{0x'+str(list)+"};")
