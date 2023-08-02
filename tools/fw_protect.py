@@ -19,7 +19,7 @@ def protect_firmware(infile, outfile, version, message):
     with open(infile, 'rb') as fp:
         firmware = fp.read()
         
-    # Reads keys for AES and CHA 
+    # Reads keys, IV, nonce, etc for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
         aesKey = f.read(32)
         aesiv = f.read(12)
@@ -68,7 +68,6 @@ def protect_firmware(infile, outfile, version, message):
 
     # Adds null-terminated message to indicate ending of blob
     firmware_blob = firmware_blob + message.encode() + b'00'
-
     print(len(firmware_blob))
 
     #set static size to amt of bytes
@@ -94,4 +93,5 @@ if __name__ == '__main__':
     parser.add_argument("--message", help="Release message for this firmware.", required=True)
     args = parser.parse_args()
 
+    #Encrypts firmware using AEs, then hashes using SHA, then encrypts again using ChaCha20-Poly1304
     protect_firmware(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
