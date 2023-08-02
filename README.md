@@ -42,4 +42,4 @@ The second encryption algorithm used is ChaCha20-Poly1305. This encrypts the fir
 
 - Before starting the process, the script performs a static size check on the firmware file by comparing its size with a pre-defined static size to ensure that the file is correctly formatted.
 
-- During the update, the script prints the progress, indicating the number of frames written and their respective sizes (258 bytes). It verifies that the bootloader responds with an OK message after receiving each frame. The code confirms that the firmware update is done and closes the UART connection.
+- During the update, the script prints the progress, indicating the number of frames written and their respective sizes (256 bytes). It verifies that the bootloader responds with an OK message after receiving each frame. The code confirms that the firmware update is done and closes the UART connection.
