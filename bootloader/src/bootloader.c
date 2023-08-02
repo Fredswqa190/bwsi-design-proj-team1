@@ -197,6 +197,11 @@ void load_firmware(void){
     uint32_t version = 0;
     uint32_t size = 0;
 
+    uint32_t fwSize = 0;
+    for (int i = 0; i<16; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        fwSize = rcv;
+    }
     // Get version as 16 bytes 
     rcv = uart_read(UART1, BLOCKING, &read);
     version = (uint32_t)rcv;
@@ -217,7 +222,52 @@ void load_firmware(void){
     uart_write_hex(UART2, size);
     nl(UART2);
 
-    // Compare to old version and abort if older (note special case for version 0).
+    uint32_t cc20TextSize = 0;
+    for (int i = 0; i<16; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        cc20TextSize = rcv;
+    }
+
+    uint32_t aesTextSize = 0;
+    for (int i = 0; i<16; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        aesTextSize = rcv;
+    }
+    
+    char buffer[fwSize-8];
+    for (int i = 0; i < fwSize-8; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        buffer[i] = rcv;
+    }
+
+    int tag[16];
+    for (int i = 0; i < 16; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        tag[i] = rcv;
+    }
+
+    int hash[32];
+    for (int i = 0; i < 32; ++i){
+        rcv = uart_read(UART1, BLOCKING, &read);
+        hash[i] = rcv;
+    }
+
+    char cc20Text[cc20TextSize];
+    for (int i=0;i<cc20TextSize;++i){
+        cc20Text[i] = buffer[i];
+    }
+
+    br_chacha20_run iHateMyLife = {chaKey, iv2, 55, cc20Text, data_index};
+    br_poly1305_ctmul_run(chaKey, iv2, cc20Text, data_index, aad, 26, tag, iHateMyLife, 0);
+    
+    char finalData[aesTextSize];
+    for (int i=0;i<aesTextSize;++i){
+        finalData[i] = cc20Text[i];
+    }
+
+    aes_decrypt(aesKey, iv, data, data_index);
+
+// Compare to old version and abort if older (note special case for version 0).
     uint16_t old_version = *fw_version_address;
 
     if (version != 0 && version < old_version){
@@ -245,56 +295,34 @@ void load_firmware(void){
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length += (int)rcv;
 
-    // Get the number of bytes specified and filled the buffer
-    uint8_t tag[32];
-
-    for (int i=0; i<32; i++){
-        tag[i] = data[i+2787];
-    }
-
-    for (int i = 0; i < sizeOf(buffer); ++i){
+        // Get the number of bytes specified
+    for (int i = 0; i < size; ++i){
         data[data_index] = uart_read(UART1, BLOCKING, &read);
         buffer[data_index] = data[data_index];
         data_index += 1;
     } // for
-    if (data_index != 2840){
+    if(frame_length == 0){
+        uart_write_str(UART2, "Got zero length frame.\n");
+    }
+    if (data_index != size){
         uart_write(UART1, ERROR);
         SysCtlReset();
     }
-    br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
-            
-     //chacha20 decryption function????
-    br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
-
-    aes_decrypt(aesKey, iv, data, data_index);
 
     while (1){
+        //flash per 1024 i.e. data[i, i+1024]; i+=1024
+
         // If we filed our page buffer, program it
-        if (data_index == FLASH_PAGESIZE || frame_length == 0){
-
-            if(frame_length == 0){
-                uart_write_str(UART2, "Got zero length frame.\n");
-            }
-
-           
-
-            
-
-
-            //aes decryption
-            //char* mess[256];
-            //for(int i = 0; i <256; i++){
-           // }
-            
+        if (frame_length == 0){
             // Try to write flash and check for error
-            if (program_flash(page_addr, data, data_index)){
+            if (program_flash(page_addr, data, FLASH_PAGESIZE)){
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
                 return;
             }
 
             // Verify flash program
-            if (memcmp(data, (void *) page_addr, data_index) != 0){
+            if (memcmp(data, (void *) page_addr, FLASH_PAGESIZE) != 0){
                 uart_write_str(UART2, "Flash check failed.\n");
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
@@ -305,7 +333,7 @@ void load_firmware(void){
             uart_write_str(UART2, "Page successfully programmed\nAddress: ");
             uart_write_hex(UART2, page_addr);
             uart_write_str(UART2, "\nBytes: ");
-            uart_write_hex(UART2, data_index);
+            uart_write_hex(UART2, FLASH_PAGESIZE);
             nl(UART2);
 
             // Update to next page
