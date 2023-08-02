@@ -196,8 +196,6 @@ void load_firmware(void){
     uint32_t version = 0;
     uint32_t size = 0;
 
-    uart_write(UART1, OK);
-
     // Get version as 16 bytes 
     rcv = uart_read(UART1, BLOCKING, &read);
     version = (uint32_t)rcv;
