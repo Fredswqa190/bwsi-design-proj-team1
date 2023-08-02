@@ -27,3 +27,14 @@ The firmware_blob consists of the metadata and the AES encrypted firmware.  Usin
 The second encryption algorithm used is ChaCha20-Poly1305. This encrypts the firmware_blob which consists of the metadata, ciphertext, tag, and hash. Although this algorithm wasn't taught in class, if implemented correctedly, it will make the firmware harder to crack into. 
 
 The firmware_blob is then written to outfile.
+
+## fw_update.py
+This firmware updater tool is a Python script designed to update the software on a target device using a UART interface. It sends firmware data to the bootloader in the form of frames and waits for an acknowledgment from the bootloader before proceeding to the next frame.
+
+The script extracts the metadata from the provided firmware file, containing version and size. These are displayed to the user before the update begins. If the version is unsupported (less than the previous one), an error will be raised. The metadata is sent to the bootloader.
+
+The code initiates a handshake with the bootloader by sending "U" to it, indicating that the update process will begin. Once it has responded, the bootloader acknowledged entering update mode.
+
+Before starting the process, the script performs a static size check on the firmware file by comparing its size with a pre-defined static size to ensure that the file is correctly formatted.
+
+During the update, the script prints the progress, indicating the number of frames written and their respective sizes (256 bytes). It verifies that the bootloader responds with an OK message after receiving each frame. The code confirms that the firmware update is done and closes the UART connection.
