@@ -34,6 +34,7 @@ def protect_firmware(infile, outfile, version, message):
     metadata = struct.pack('<HH', version, len(firmware))
     print(metadata)
 
+    #gets firmware and firmware size
     firmwareAndSize = fwSize.to_bytes(16, "little")+ firmware
 
     # Encrypt FIRWMARE with AES-GCM 
