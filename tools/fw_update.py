@@ -33,23 +33,27 @@ from util import *
 RESP_OK = b"\x00"
 FRAME_SIZE = 256
 
-
+# Function that sends metadata to the bootloader
 def send_metadata(ser, metadata, debug=False):
+    # Extracts version and size from metadata and displays it
     version, size = struct.unpack_from("<HH", metadata)
     print(f"Version: {version}\nSize: {size} bytes\n")
 
-    #old version
+    # Defines the old version
     oldVersion = 1
 
+    # If version is NOT 0 or less than the previous version, it raises an error
     if (version != 0 & version < oldVersion):
         raise RuntimeError("version is not supported")
 
+    # If version is 0, it is supported and no action is required
     if (version == 0):
         pass
 
-    # Handshake for update
+    # Handshake for update by sending 'U' to bootloader
     ser.write(b"U")
 
+    # Waits for "U" / when bootloader acknowledges entering update mode
     print("Waiting for bootloader to enter update mode...")
     while ser.read(1).decode() != "U":
         print("got a byte")
@@ -61,20 +65,21 @@ def send_metadata(ser, metadata, debug=False):
 
     ser.write(metadata)
 
-    # Wait for an OK from the bootloader.
+    # Waits for an OK from the bootloader, if not error occurs.
     resp = ser.read(1)
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
 
+# Function that sends frame to the bootloader
 def send_frame(ser, frame, debug=False):
-    ser.write(frame)  # Write the frame...
+    ser.write(frame)  # Write the frame to serial
 
     if debug:
         print_hex(frame)
 
-    resp = ser.read(1)  # Wait for an OK from the bootloader
+    resp = ser.read(1)  # Wait for an OK from the bootloader to proceed.
 
-    time.sleep(0.1)
+    time.sleep(0.1) # Small delay after sending the frame.
 
     if resp != RESP_OK:
         raise RuntimeError("ERROR: Bootloader responded with {}".format(repr(resp)))
@@ -82,17 +87,21 @@ def send_frame(ser, frame, debug=False):
     if debug:
         print("Resp: {}".format(ord(resp)))
 
-
+# Function to update the firmware file
 def update(ser, infile, debug):
     # Open serial port. Set baudrate to 115200. Set timeout to 2 seconds.
+    # Reads firmware image from the provided file
     with open(infile, "rb") as fp:
         firmware_blob = fp.read()
 
+    # Extracts metadata and firmware data
     metadata = firmware_blob[:4]
     firmware = firmware_blob[4:]
 
+    # Sends metadata to the bootloader
     send_metadata(ser, metadata, debug=debug)
 
+    # Iterates through the firmware data in frames to be sent to the bootloader
     for idx, frame_start in enumerate(range(0, len(firmware), FRAME_SIZE)):
         data = firmware[frame_start : frame_start + FRAME_SIZE]
 
@@ -108,7 +117,7 @@ def update(ser, infile, debug):
 
     print("Done writing firmware.")
 
-    # Removes all file contents
+    # Removes all file contents from secret output file
     open('secret_build_output.py.txt', 'w').close()
 
     # Send a zero length payload to tell the bootlader to finish writing it's page.
@@ -120,7 +129,7 @@ def update(ser, infile, debug):
 
     return ser
 
-#static firmware 
+# Function to check the static size of the firmware file
 """
 def static_firmware_size(infile):
     #read encrypted firmware file

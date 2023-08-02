@@ -22,7 +22,7 @@ def protect_firmware(infile, outfile, version, message):
         print('firmware:' +str(len(firmware)))
         fwSize=len(firmware)
         
-    # Reads keys for AES and CHA 
+    # Reads keys, IV, nonce, etc for AES and CHA 
     with open('secret_build_output.txt', 'rb') as f:
         aesKey = f.read(32)
         aesiv = f.read(12)
@@ -113,4 +113,5 @@ if __name__ == '__main__':
     parser.add_argument("--message", help="Release message for this firmware.", required=True)
     args = parser.parse_args()
 
+    #Encrypts firmware using AEs, then hashes using SHA, then encrypts again using ChaCha20-Poly1304
     protect_firmware(infile=args.infile, outfile=args.outfile, version=int(args.version), message=args.message)
