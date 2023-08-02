@@ -31,7 +31,7 @@ The firmware_blob consists of the metadata and the AES encrypted firmware.  Usin
 - ChaCha20-Poly1305
 The second encryption algorithm used is ChaCha20-Poly1305. This encrypts the firmware_blob which consists of the metadata, ciphertext, tag, and hash. Although this algorithm wasn't taught in class, if implemented correctedly, it will make the firmware harder to crack into. 
 
-The firmware_blob is then written to outfile.
+- The firmware_blob is then written to outfile.
 
 ## fw_update.py
 - This firmware updater tool is a Python script designed to update the software on a target device using a UART interface. It sends firmware data to the bootloader in the form of frames and waits for an acknowledgment from the bootloader before proceeding to the next frame.
