@@ -246,6 +246,12 @@ void load_firmware(void){
         frame_length += (int)rcv;
 
     // Get the number of bytes specified and filled the buffer
+    uint8_t tag[32];
+
+    for (int i=0; i<32; i++){
+        tag[i] = data[i+2787];
+    }
+
     for (int i = 0; i < sizeOf(buffer); ++i){
         data[data_index] = uart_read(UART1, BLOCKING, &read);
         buffer[data_index] = data[data_index];
@@ -255,6 +261,13 @@ void load_firmware(void){
         uart_write(UART1, ERROR);
         SysCtlReset();
     }
+    br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
+            
+     //chacha20 decryption function????
+    br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
+
+    aes_decrypt(aesKey, iv, data, data_index);
+
     while (1){
         // If we filed our page buffer, program it
         if (data_index == FLASH_PAGESIZE || frame_length == 0){
@@ -263,22 +276,14 @@ void load_firmware(void){
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
 
-            uint8_t tag[32];
+           
 
-            for (int i=0; i<32; i++){
-                tag[i] = data[i+2787];
-            }
-
-            br_chacha20_run iHateMyLife = {chaKey, iv2, 55, data, data_index};
             
-            //chacha20 decryption function????
-            br_poly1305_ctmul_run(chaKey, iv2, data, data_index, aad, 26, tag, iHateMyLife, 0);
 
 
             //aes decryption
             //char* mess[256];
             //for(int i = 0; i <256; i++){
-                uart_write_str(UART2, aes_decrypt(aesKey, iv, data, data_index));
            // }
             
             // Try to write flash and check for error
