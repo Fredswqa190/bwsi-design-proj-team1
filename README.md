@@ -38,3 +38,12 @@ The code initiates a handshake with the bootloader by sending "U" to it, indicat
 Before starting the process, the script performs a static size check on the firmware file by comparing its size with a pre-defined static size to ensure that the file is correctly formatted.
 
 During the update, the script prints the progress, indicating the number of frames written and their respective sizes (256 bytes). It verifies that the bootloader responds with an OK message after receiving each frame. The code confirms that the firmware update is done and closes the UART connection.
+
+# bl_build.py:
+bl_build.py is a python script thats main function is to build the bootloader. Additionally, it generates the AES symmetric key as well as the ChaCha20 key. This IV and nonce used for AES and ChaCha are also generated here, all of which are then sent to the secrets.h file. 
+
+We then created associated data that will be used to ensure the authenticitry of the message. This data will be encypted along with the firmware, since, in theory, if the firmware is decoded and the message is not the same since encryption, the message has been tampered with.
+
+The header file is written in C, as to better integrate it with the bootloader.c that will use the keys. This file inlucdes code that isolates the keys into digestable lines for the bootloader to read. 
+
+Lastly, before the bootloader is built, the pathway to the firmware binary is checked and then ran if there are no issues. 
