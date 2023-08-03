@@ -10,7 +10,7 @@
 
 Ensure that BearSSL is compiled for the stellaris: `cd ~/lib/BearSSL && make CONF=../../stellaris/bearssl/stellaris clean && make CONF=../../stellaris/bearssl/stellaris`
 
-structure: total size, metadata, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
+structure: total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
 
 ## bl_build.py:
 - bl_build.py is a python script thats main function is to build the bootloader. Additionally, it generates the AES symmetric key as well as the ChaCha20 key. This IV and nonce used for AES and ChaCha are also generated here, all of which are then sent to the secrets.h file. 

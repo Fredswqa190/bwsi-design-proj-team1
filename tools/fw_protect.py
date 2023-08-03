@@ -90,8 +90,8 @@ def protect_firmware(infile, outfile, version, message):
     print('firmware blob: '+str(len(firmware_blob)))
 
     #adding size
-    #structure: metadata, total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
-    firmware_blob=metadata+length.to_bytes(16, 'little')+firmware_blob1
+    #structure: total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
+    firmware_blob=length.to_bytes(16, 'little')+firmware_blob1
     print('metadata: ' + str(len(metadata)))
     
     print(len(firmware_blob))
@@ -100,6 +100,10 @@ def protect_firmware(infile, outfile, version, message):
     # Write firmware blob to outfile
     with open(outfile, 'wb') as outfile:
         outfile.write(firmware_blob)
+
+    with open('hi.txt', 'w') as thing:
+        list = util.print_hex(firmware_blob)
+        thing.write(str(list))
 
 """def lengthCheck(firmware_blob):
         length = len(firmware_blob)

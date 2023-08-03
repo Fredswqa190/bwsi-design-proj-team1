@@ -36,7 +36,7 @@ FRAME_SIZE = 256
 # Function that sends metadata to the bootloader
 def send_metadata(ser, metadata, debug=False):
     # Extracts version and size from metadata and displays it
-    version, size = struct.unpack_from("<HH", metadata)
+    size, version = struct.unpack_from("<HH", metadata)
     print(f"Version: {version}\nSize: {size} bytes\n")
 
     # Defines the old version
