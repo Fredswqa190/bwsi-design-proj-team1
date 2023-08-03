@@ -74,9 +74,6 @@ uint16_t *fw_size_address = (uint16_t *)(METADATA_BASE + 2);
 uint8_t *fw_release_message_address;
 void uart_write_hex_bytes(uint8_t uart, uint8_t * start, uint32_t len);
 
-// Firmware Buffer
-unsigned char data[FLASH_PAGESIZE];
-
 int main(void){
 
     // A 'reset' on UART0 will re-start this code at the top of main, won't clear flash, but will clean ram.
@@ -306,11 +303,12 @@ void load_firmware(void){
 
             unsigned char hash1compare[32];
             sha_hash(finalData, aesTextSize, hash1compare);
-            if (hash1compare != hash1){
-                SysCtlReset();
-                return;
+            for(int i=0; i<32;++i){
+                if (hash1compare[i] != hash1[i]){
+                    SysCtlReset();
+                    return;
+                }
             }
-
             char AESencrypted[aesTextSize];
             for (int i=0;i<aesTextSize;++i){
                 AESencrypted[i] = finalData[i];
@@ -335,10 +333,12 @@ void load_firmware(void){
 
             unsigned char hash2compare[32];
             sha_hash(firmware, clearSize, hash2compare);
-
-            if (hash2compare != hash2){
-                SysCtlReset();
-                return;
+            
+            for(int i=0; i<32;++i){
+                if (hash2compare[i] != hash2[i]){
+                    SysCtlReset();
+                    return;
+                }
             }
 
             if(frame_length == 0){
@@ -348,16 +348,37 @@ void load_firmware(void){
                 uart_write(UART1, ERROR);
                 SysCtlReset();
             }
-            
+
+
+            int x=1;
+            int pad = 0;
+            while (1){
+                if (fwSize<1024*x){
+                    pad=(1024*x)-fwSize;
+                    return pad;
+                    break;
+                }
+                else{
+                    x+=1;
+                }
+                }
+            unsigned char* padding[fwSize+pad];
+            for (int i=0;i<fwSize;++i){
+                padding[i]=firmware[i];
+            }
+            for (int i=0;i<pad;++i){
+                padding[i+fwSize]=0;
+            }
+
             // Try to write flash and check for error
-            if (program_flash(page_addr, data, FLASH_PAGESIZE)){
+            if (program_flash(page_addr, padding, FLASH_PAGESIZE)){
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
                 return;
             }
 
             // Verify flash program
-            if (memcmp(data, (void *) page_addr, FLASH_PAGESIZE) != 0){
+            if (memcmp(padding, (void *) page_addr, FLASH_PAGESIZE) != 0){
                 uart_write_str(UART2, "Flash check failed.\n");
                 uart_write(UART1, ERROR); // Reject the firmware
                 SysCtlReset();            // Reset device
