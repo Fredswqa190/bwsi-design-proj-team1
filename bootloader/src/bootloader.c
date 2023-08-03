@@ -193,6 +193,16 @@ void load_firmware(void){
     uint32_t version = 0;
     uint32_t size = 0;
 
+    // Get version as 16 bytes 
+    rcv = uart_read(UART1, BLOCKING, &read);
+    version = (uint32_t)rcv;
+    rcv = uart_read(UART1, BLOCKING, &read);
+    version |= (uint32_t)rcv << 8;
+
+    uart_write_str(UART2, "Received Firmware Version: ");
+    uart_write_hex(UART2, version);
+    nl(UART2);
+
     // Get size as 16 bytes 
     rcv = uart_read(UART1, BLOCKING, &read);
     size = (uint32_t)rcv;
@@ -203,15 +213,6 @@ void load_firmware(void){
     uart_write_hex(UART2, size);
     nl(UART2);
 
-    // Get version as 16 bytes 
-    rcv = uart_read(UART1, BLOCKING, &read);
-    version = (uint32_t)rcv;
-    rcv = uart_read(UART1, BLOCKING, &read);
-    version |= (uint32_t)rcv << 8;
-
-    uart_write_str(UART2, "Received Firmware Version: ");
-    uart_write_hex(UART2, version);
-    nl(UART2);
 
 // Compare to old version and abort if older (note special case for version 0).
     uint16_t old_version = *fw_version_address;
@@ -234,62 +235,70 @@ void load_firmware(void){
 
     uart_write(UART1, OK); // Acknowledge the metadata.
     /* Loop here until you can get all your characters and stuff */
-    /*
-    int pad = 0;
-    if(clearSize<3072){
-        clearSize=3072;
-        firmware
-    }*/
+    
+    int c = 0;
+    uint32_t fwSize = 0;
+    unsigned int cc20TextSize = 0;
+    uint32_t aesTextSize = 0;
 
     while (1){
-        //flash per 1024 i.e. data[i, i+1024]; i+=1024
         char buffer[size];
         // Get two bytes for the length.
+
+        /* DO NOT TOUCH THIS*/
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length = (int)rcv << 8;
         rcv = uart_read(UART1, BLOCKING, &read);
         frame_length += (int)rcv;
+        uart_write_str(UART2, frame_length);
+
+        if (c>1){
+            rcv = uart_read(UART1, BLOCKING, &read);
+            fwSize = (int)rcv << 8;
+            rcv = uart_read(UART1, BLOCKING, &read);
+            fwSize += (int)rcv;
+            uart_write_str(UART2, fwSize);
+        
+            rcv = uart_read(UART1, BLOCKING, &read);
+            cc20TextSize = (int)rcv << 8;
+            rcv = uart_read(UART1, BLOCKING, &read);
+            cc20TextSize += (int)rcv;
+            uart_write_str(UART2, cc20TextSize);
+
+            rcv = uart_read(UART1, BLOCKING, &read);
+            aesTextSize = (int)rcv << 8;
+            rcv = uart_read(UART1, BLOCKING, &read);
+            aesTextSize += (int)rcv;
+            uart_write_str(UART2, aesTextSize);
+
+            c++;
+        }
 
         // Get the number of bytes specified
-        for (int i = 0; i < frame_length; ++i){
-            buffer[data_index] = uart_read(UART1, BLOCKING, &read);
-            data_index += 1;
+        for (int i = 0; i < fwSize; i++){
+            buffer[i] = uart_read(UART1, BLOCKING, &read);
+            uart_write_hex(UART2, buffer[i]);
         } // for
         
         // If we filed our page buffer, program it
-        if (frame_length == 0){
-            uint32_t fwSize = 0;
-            for (int i = 0; i<16; ++i){
-                fwSize = buffer[i];
-            }
-    
-            unsigned int cc20TextSize = 0;
-            for (int i = 0; i<16; ++i){
-                cc20TextSize = buffer[i+16];
-            }
-
-            uint32_t aesTextSize = 0;
-            for (int i = 0; i<16; ++i){
-                aesTextSize = buffer[i+32];
-            }
-    
-            char buffer2[fwSize-32];
-            for (int i = 0; i < fwSize-32; ++i){
-                buffer2[i] = buffer[i+48];
+        if (!rcv){
+            char buffer2[cc20TextSize];
+            for (int i = 0; i < fwSize-4; i++){
+                buffer2[i] = buffer[i];
             }
 
             int tag[16];
-            for (int i = 0; i < 16; ++i){
-                tag[i] = buffer[i+64];
+            for (int i = 0; i < 16; i++){
+                tag[i] = buffer[i+cc20TextSize];
             }
 
             char hash1[32];
-            for (int i = 0; i < 32; ++i){
-                hash1[i] = buffer[i+96];
+            for (int i = 0; i < 32; i++){
+                hash1[i] = buffer[i+cc20TextSize+16];
             }
 
             void* cc20Text[cc20TextSize];
-            for (int i=0;i<cc20TextSize;++i){
+            for (int i=0;i<cc20TextSize;i++){
                 cc20Text[i] = buffer2[i];
             }
             long unsigned int cc=0;
@@ -297,44 +306,46 @@ void load_firmware(void){
             br_poly1305_ctmul_run(chaKey, iv2, cc20Text, cc20TextSize, aad, 26, tag, iHateMyLife, 0);
     
             unsigned char finalData[aesTextSize];
-            for (int i=0;i<aesTextSize;++i){
+            for (int i=0;i<aesTextSize;i++){
                 finalData[i] = cc20Text[i];
             }
 
             unsigned char hash1compare[32];
             sha_hash(finalData, aesTextSize, hash1compare);
-            for(int i=0; i<32;++i){
+            for(int i=0; i<32;i++){
                 if (hash1compare[i] != hash1[i]){
                     SysCtlReset();
                     return;
                 }
             }
             char AESencrypted[aesTextSize];
-            for (int i=0;i<aesTextSize;++i){
+            for (int i=0;i<aesTextSize;i++){
                 AESencrypted[i] = finalData[i];
             }
 
-            aes_decrypt(aesKey, iv, AESencrypted, cc20TextSize);
+            aes_decrypt(aesKey, iv, AESencrypted, aesTextSize);
 
             uint32_t clearSize = 0;
-            for (int i = 0; i<16; ++i){
-                clearSize = AESencrypted;
-            }
+            uint32_t clearSize2 = 0;
+            clearSize2 = AESencrypted[0];
+            clearSize = (int)clearSize2 << 8;
+            clearSize2 = AESencrypted[1];
+            clearSize += (int)clearSize2;
 
             unsigned char firmware[clearSize];
-            for (int i=0;i<clearSize;++i){
+            for (int i=0;i<clearSize;i++){
                 firmware[i]=AESencrypted[i];
             }
 
             char hash2[32];
-            for (int i=clearSize;i<clearSize+32;++i){
+            for (int i=clearSize;i<clearSize+32;i++){
                 hash2[i]=AESencrypted[i];
             }
 
             unsigned char hash2compare[32];
             sha_hash(firmware, clearSize, hash2compare);
             
-            for(int i=0; i<32;++i){
+            for(int i=0; i<32;i++){
                 if (hash2compare[i] != hash2[i]){
                     SysCtlReset();
                     return;
@@ -344,10 +355,10 @@ void load_firmware(void){
             if(frame_length == 0){
                 uart_write_str(UART2, "Got zero length frame.\n");
             }
-            if (data_index != fwSize){
+            /*if (data_index != clearSize){
                 uart_write(UART1, ERROR);
                 SysCtlReset();
-            }
+            }*/
 
 
             int x=1;
@@ -363,10 +374,10 @@ void load_firmware(void){
                 }
                 }
             unsigned char* padding[fwSize+pad];
-            for (int i=0;i<fwSize;++i){
+            for (int i=0;i<fwSize;i++){
                 padding[i]=firmware[i];
             }
-            for (int i=0;i<pad;++i){
+            for (int i=0;i<pad;i++){
                 padding[i+fwSize]=0;
             }
 

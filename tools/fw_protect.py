@@ -35,7 +35,8 @@ def protect_firmware(infile, outfile, version, message):
     print(metadata)
 
     #gets firmware and firmware size
-    firmwareAndSize = fwSize.to_bytes(16, "little")+ firmware
+    firmwareAndSize = fwSize.to_bytes(2, "little")+ firmware
+    print(len(firmwareAndSize))
 
     # Encrypt FIRWMARE with AES-GCM 
     cipherNew = AES.new(aesKey, AES.MODE_CBC, iv=aesiv)
@@ -74,7 +75,7 @@ def protect_firmware(infile, outfile, version, message):
     cTextSize = len(ciphertext)
 
     # Constructs the firmware blob: metadata [already stored] + encrypted firmware + iv + hash of AES and metadata
-    firmware_blob = cTextSize.to_bytes(16, 'little') + AESlen.to_bytes(16, 'little')+ ciphertext + tag + hash.digest()
+    firmware_blob = cTextSize.to_bytes(2, 'little') + AESlen.to_bytes(2, 'little')+ ciphertext + tag + hash.digest()
 
     print('ciphertext: '+str(cTextSize))
     print('tag: ' + str(len(tag)))
@@ -84,14 +85,14 @@ def protect_firmware(infile, outfile, version, message):
     length = len(firmware_blob)
 
     # Adds null-terminated message to indicate ending of blob
-    firmware_blob1 = firmware_blob + message.encode() + b'00'
+    firmware_blob1 = firmware_blob + message.encode() + b'\x00'
 
     print('message: ' + str(len(message.encode())))
     print('firmware blob: '+str(len(firmware_blob)))
 
     #adding size
-    #structure: total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
-    firmware_blob=length.to_bytes(16, 'little')+firmware_blob1
+    #structure: metadata, total size, ctextsize, aessize, encrypted(aes output[actualFirmware], hash), tag, hash, message, 0
+    firmware_blob=metadata+length.to_bytes(2, 'little')+firmware_blob1
     print('metadata: ' + str(len(metadata)))
     
     print(len(firmware_blob))
